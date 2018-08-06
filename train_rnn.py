@@ -9,7 +9,7 @@ import shutil
 from datetime import datetime
 import matplotlib.pyplot as plt
 
-GAME = 'myenv-v1'
+GAME = 'myenv-v0'
 OUTPUT_GRAPH = True
 LOG_DIR = './log'
 MODEL_DIR = './models'
