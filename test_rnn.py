@@ -3,13 +3,13 @@ import numpy as np
 import gym
 import myenv
 from train_rnn import ACNet
-GAME = 'myenv-v1'
-MAX_EP_STEP = 200
+GAME = 'myenv-v0'
+MAX_EP_STEP = 500
 MAX_EP = 10
 GLOBAL_RUNNING_R = []
 GLOBAL_EP = 0
 GLOBAL_NET_SCOPE = 'Global_Net'
-NN_MODEL = './models/nn_model_ep_400.ckpt'
+NN_MODEL = './models/nn_model_ep_100.ckpt'
 env = gym.make(GAME)
 
 N_S = env.observation_space.shape[0]
