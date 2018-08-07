@@ -20,10 +20,10 @@ MAX_EP_STEP = 500
 MAX_GLOBAL_EP = 5000
 GLOBAL_NET_SCOPE = 'Global_Net'
 UPDATE_GLOBAL_ITER = 5
-GAMMA = 0.9
+GAMMA = 0.99
 ENTROPY_BETA = 0.01
 LR_A = 0.0001    # learning rate for actor
-LR_C = 0.001    # learning rate for critic
+LR_C = 0.0001    # learning rate for critic
 GLOBAL_RUNNING_R = []
 GLOBAL_EP = 0
 
@@ -95,7 +95,7 @@ class ACNet(object):
     def _build_net(self, scope):
         w_init = tf.random_normal_initializer(0., .1)
         with tf.variable_scope('critic'):   # only critic controls the rnn update
-            cell_size = 64
+            cell_size = 16
             s = tf.expand_dims(self.s, axis=1,
                                name='timely_input')  # [time_step, feature] => [time_step, batch, feature]
             rnn_cell = tf.contrib.rnn.BasicLSTMCell(cell_size)
@@ -152,12 +152,13 @@ class Worker(object):
             rnn_state = self.sess.run(self.AC.init_state)    # zero rnn state at beginning
             keep_state = rnn_state       # keep rnn state for updating global net
             for ep_t in range(MAX_EP_STEP):
-#                if self.name == 'W_0':
-#                    self.env.render()
+                if self.name == 'W_0':
+                    self.env.render()
 
                 a, rnn_state_ = self.AC.choose_action(s, rnn_state)  # get the action and next rnn state
                 s_, r, done, info = self.env.step(a)
                 if ep_t == MAX_EP_STEP- 1:
+                    r = -1.0
                     done = True
 
                 ep_r += r

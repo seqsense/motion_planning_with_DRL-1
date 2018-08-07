@@ -237,6 +237,8 @@ class MyEnv(gym.Env):
             reward = -5
         else:
             reward = (self.pre_dis-self.dis)*0.15
+        if abs(self.pre_dis-self.dis) < 1e-6:
+            reward -=0.05
         self.pre_dis = self.dis
         reward += 1./(200.*np.pi)*angle_diff(np.arctan2((self.pose[1]-self.target[1]),(self.pose[0]-self.target[0])),self.pose[2])
         return reward
