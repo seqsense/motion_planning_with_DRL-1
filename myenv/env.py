@@ -28,8 +28,8 @@ def reset_map(size):
     make_rectangle(MAP,150,200,0,200)
     l1 = int(np.random.rand()*100)+50                                                         
     l2 = int(np.random.rand()*100)+50
-    make_rectangle(MAP,l1,l1+10,80,90)
-    make_rectangle(MAP,l2,l2+20,130,150)
+    make_circle(MAP,l1,80,10)
+    make_circle(MAP,l2,130,20)
     return MAP,l1,l2
 
 def angle_nomalize(z):
@@ -181,13 +181,13 @@ class MyEnv(gym.Env):
             ob3.set_color(0.,0.,0.)
             self.viewer.add_geom(ob3)
             
-            ob4 = rendering.make_capsule(10,10)
+            ob4 = rendering.make_circle(10)
             self.ob4_trans = rendering.Transform()
             ob4.add_attr(self.ob4_trans)
             ob4.set_color(0.0,0.0,0.0)
             self.viewer.add_geom(ob4)
 
-            ob5 = rendering.make_capsule(10,20)
+            ob5 = rendering.make_circle(20)
             self.ob5_trans = rendering.Transform()
             ob5.add_attr(self.ob5_trans)
             ob5.set_color(0.0,0.0,0.0)
