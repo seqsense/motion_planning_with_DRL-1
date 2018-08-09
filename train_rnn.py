@@ -16,7 +16,7 @@ MODEL_DIR = './models'
 SUMMARY_DIR = './results'
 MODEL_SAVE_INTERVAL = 100
 N_WORKERS = multiprocessing.cpu_count()
-MAX_EP_STEP = 500
+MAX_EP_STEP = 1000
 MAX_GLOBAL_EP = 5000
 GLOBAL_NET_SCOPE = 'Global_Net'
 UPDATE_GLOBAL_ITER = 5
@@ -152,13 +152,13 @@ class Worker(object):
             rnn_state = self.sess.run(self.AC.init_state)    # zero rnn state at beginning
             keep_state = rnn_state       # keep rnn state for updating global net
             for ep_t in range(MAX_EP_STEP):
-                if self.name == 'W_0':
-                    self.env.render()
+#                if self.name == 'W_0':
+#                    self.env.render()
 
                 a, rnn_state_ = self.AC.choose_action(s, rnn_state)  # get the action and next rnn state
                 s_, r, done, info = self.env.step(a)
                 if ep_t == MAX_EP_STEP- 1:
-                    r = -1.0
+                    r = -3.0
                     done = True
 
                 ep_r += r
