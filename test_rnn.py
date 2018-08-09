@@ -4,12 +4,12 @@ import gym
 import myenv
 from train_rnn import ACNet
 GAME = 'myenv-v0'
-MAX_EP_STEP = 500
+MAX_EP_STEP = 1000
 MAX_EP = 10
 GLOBAL_RUNNING_R = []
 GLOBAL_EP = 0
 GLOBAL_NET_SCOPE = 'Global_Net'
-NN_MODEL = './models/nn_model_ep_400.ckpt'
+NN_MODEL = './models/nn_model_ep_2400.ckpt'
 env = gym.make(GAME)
 
 N_S = env.observation_space.shape[0]
@@ -43,7 +43,7 @@ def main():
 
                 if done:
                     break
-            print(ep, r, done,t)
+            print(ep, ep_r, done,t)
 
 
 if __name__ == '__main__':

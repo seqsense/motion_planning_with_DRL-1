@@ -26,11 +26,11 @@ def reset_map(size):
         MAP[size-1][j] = 1
     make_rectangle(MAP,0,50,0,200)
     make_rectangle(MAP,150,200,0,200)
-    l1 = int(np.random.rand()*100)+50                                                         
-    l2 = int(np.random.rand()*100)+50
-    make_circle(MAP,l1,80,10)
-    make_circle(MAP,l2,130,20)
-    return MAP,l1,l2
+    #l1 = 100#int(np.random.rand()*100)+50                                                         
+    #l2 = 120#int(np.random.rand()*100)+50
+    #make_circle(MAP,l1,80,10)
+    #make_circle(MAP,l2,130,20)
+    return MAP#,l1,l2
 
 def angle_nomalize(z):
     return np.arctan2(np.sin(z),np.cos(z))
@@ -53,7 +53,8 @@ class MyEnv(gym.Env):
     def __init__(self):
         self.MAP_SIZE = 200
         self.MAP_RESOLUTION = 0.01
-        self.MAP,self.l1, self.l2 = reset_map(self.MAP_SIZE)
+        #self.MAP,self.l1, self.l2 = reset_map(self.MAP_SIZE)
+        self.MAP = reset_map(self.MAP_SIZE)
         self.WORLD_SIZE = self.MAP_SIZE * self.MAP_RESOLUTION
         self.DT = 0.01 #seconds between state updates
 
@@ -77,7 +78,7 @@ class MyEnv(gym.Env):
         self.max_distance = np.sqrt(2) * self.WORLD_SIZE
         self.NUM_LIDAR = 10
         self.NUM_TARGET = 3 
-        self.MAX_ANGLE = np.pi
+        self.MAX_ANGLE = 0.5*np.pi
         self.ANGLE_INCREMENT = self.MAX_ANGLE * 2.0 / self.NUM_LIDAR
         self.RANGE_MAX = 10
         self.observation_low = np.full(self.NUM_LIDAR+self.NUM_TARGET, self.min_range)
@@ -105,7 +106,8 @@ class MyEnv(gym.Env):
             self.target = np.array([np.random.rand()*0.40+0.80, 1.8,0.0])
             if not self.is_collision(self.target):
                 break
-        self.MAP, self.l1, self.l2 = reset_map(self.MAP_SIZE) 
+        self.MAP = reset_map(self.MAP_SIZE) 
+        #self.MAP, self.l1, self.l2 = reset_map(self.MAP_SIZE) 
         self.dis = np.sqrt((self.target[0]-self.pose[0])**2 + (self.target[1]-self.pose[1])**2)
         self.pre_dis = self.dis
         self.observation = self.observe()
@@ -118,6 +120,7 @@ class MyEnv(gym.Env):
         self.pose[1] = self.pose[1] + action[0]*np.sin(self.pose[2])*self.DT
         self.pose[2] = self.pose[2] + action[1]*self.DT
         self.pose[2] %= 2.0 * np.pi
+        #self.pose[2] = angle_nomalize(self.pose[2])
                 
         self.observation = self.observe()
         reward = self.get_reward()
@@ -153,6 +156,17 @@ class MyEnv(gym.Env):
             robot_orientation.set_color(0.0,1.0,0.0)
             robot_orientation.add_attr(self.orientation_trans)
             self.viewer.add_geom(robot_orientation)
+            #lidar
+            #for i in range(self.NUM_LIDAR):
+            #    lidar = rendering.make_capsule(scale*self.observation[i],1.0)
+            #    lidar_trans = rendering.Transform()
+            #    robot_x = (margin + self.pose[0]) * scale
+            #    robot_y = (margin + self.pose[1]) * scale
+            #    lidar_trans.set_translation(robot_x,robot_y)
+            #    lidar_trans.set_rotation(self.pose[2] + i*self.ANGLE_INCREMENT - self.MAX_ANGLE)
+            #    lidar.set_color(1.0,0.0,0.0)
+            #    lidar.add_attr(lidar_trans)
+            #    self.viewer.add_geom(lidar)
             #target
             target = rendering.make_circle(self.robot_radius*0.3*scale)
             self.target_trans = rendering.Transform()
@@ -185,13 +199,13 @@ class MyEnv(gym.Env):
             self.ob4_trans = rendering.Transform()
             ob4.add_attr(self.ob4_trans)
             ob4.set_color(0.0,0.0,0.0)
-            self.viewer.add_geom(ob4)
+            #self.viewer.add_geom(ob4)
 
             ob5 = rendering.make_circle(20)
             self.ob5_trans = rendering.Transform()
             ob5.add_attr(self.ob5_trans)
             ob5.set_color(0.0,0.0,0.0)
-            self.viewer.add_geom(ob5)
+            #self.viewer.add_geom(ob5)
 
             #l = (margin+self.l1*self.MAP_RESOLUTION) * scale
             #r = (margin+(self.l1+10)*self.MAP_RESOLUTION) * scale
@@ -215,8 +229,8 @@ class MyEnv(gym.Env):
         self.orientation_trans.set_translation(robot_x,robot_y)
         self.orientation_trans.set_rotation(robot_orientation)
         self.target_trans.set_translation((self.target[0]+margin)*scale,(self.target[1]+margin)*scale)
-        self.ob4_trans.set_translation((margin+self.l1*self.MAP_RESOLUTION)*scale,(margin+80*self.MAP_RESOLUTION)*scale)
-        self.ob5_trans.set_translation((margin+self.l2*self.MAP_RESOLUTION)*scale,(margin+130*self.MAP_RESOLUTION)*scale)
+        #self.ob4_trans.set_translation((margin+self.l1*self.MAP_RESOLUTION)*scale,(margin+80*self.MAP_RESOLUTION)*scale)
+        #self.ob5_trans.set_translation((margin+self.l2*self.MAP_RESOLUTION)*scale,(margin+130*self.MAP_RESOLUTION)*scale)
 
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
 
@@ -236,7 +250,7 @@ class MyEnv(gym.Env):
         elif (not self.is_movable(self.pose)) or self.is_collision(self.pose):
             reward = -5
         else:
-            reward = (self.pre_dis-self.dis)*0.15
+            reward = (self.pre_dis-self.dis)*0.
         if abs(self.pre_dis-self.dis) < 1e-6:
             reward -=0.05
         self.pre_dis = self.dis
@@ -250,7 +264,7 @@ class MyEnv(gym.Env):
 
     def is_collision(self, pose):
         min_dis = self.RANGE_MAX
-        margin_collision = self.robot_radius * 0.2
+        margin_collision = self.robot_radius * 0.1
         NUM_CHECK = 36
         for i in range(NUM_CHECK):
             angle = i * (2.0 * np.pi / NUM_CHECK)

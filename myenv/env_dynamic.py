@@ -78,7 +78,7 @@ class MyEnv(gym.Env):
         self.max_distance = np.sqrt(2) * self.WORLD_SIZE
         self.NUM_LIDAR = 10
         self.NUM_TARGET = 3 
-        self.MAX_ANGLE = np.pi
+        self.MAX_ANGLE = 0.5*np.pi
         self.ANGLE_INCREMENT = self.MAX_ANGLE * 2.0 / self.NUM_LIDAR
         self.RANGE_MAX = 10
         self.observation_low = np.full(self.NUM_LIDAR+self.NUM_TARGET, self.min_range)
@@ -120,6 +120,7 @@ class MyEnv(gym.Env):
         self.pose[1] = self.pose[1] + action[0]*np.sin(self.pose[2])*self.DT
         self.pose[2] = self.pose[2] + action[1]*self.DT
         self.pose[2] %= 2.0 * np.pi
+        #self.pose[2] = angle_nomalize(self.pose[2])
                 
         self.observation = self.observe()
         reward = self.get_reward()
@@ -155,6 +156,17 @@ class MyEnv(gym.Env):
             robot_orientation.set_color(0.0,1.0,0.0)
             robot_orientation.add_attr(self.orientation_trans)
             self.viewer.add_geom(robot_orientation)
+            #lidar
+            #for i in range(self.NUM_LIDAR):
+            #    lidar = rendering.make_capsule(scale*self.observation[i],1.0)
+            #    lidar_trans = rendering.Transform()
+            #    robot_x = (margin + self.pose[0]) * scale
+            #    robot_y = (margin + self.pose[1]) * scale
+            #    lidar_trans.set_translation(robot_x,robot_y)
+            #    lidar_trans.set_rotation(self.pose[2] + i*self.ANGLE_INCREMENT - self.MAX_ANGLE)
+            #    lidar.set_color(1.0,0.0,0.0)
+            #    lidar.add_attr(lidar_trans)
+            #    self.viewer.add_geom(lidar)
             #target
             target = rendering.make_circle(self.robot_radius*0.3*scale)
             self.target_trans = rendering.Transform()
@@ -238,7 +250,7 @@ class MyEnv(gym.Env):
         elif (not self.is_movable(self.pose)) or self.is_collision(self.pose):
             reward = -5
         else:
-            reward = (self.pre_dis-self.dis)*0.15
+            reward = (self.pre_dis-self.dis)*0.5
         if abs(self.pre_dis-self.dis) < 1e-6:
             reward -=0.05
         self.pre_dis = self.dis
