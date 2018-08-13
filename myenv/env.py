@@ -60,7 +60,7 @@ class MyEnv(gym.Env):
         #self.MAP,self.l1, self.l2 = reset_map(self.MAP_SIZE)
         self.MAP = reset_map(self.MAP_SIZE)
         self.WORLD_SIZE = self.MAP_SIZE * self.MAP_RESOLUTION
-        self.DT = 0.01 #seconds between state updates
+        self.DT = 0.1 #seconds between state updates
 
         self.robot_radius = 0.20 #[m]
 

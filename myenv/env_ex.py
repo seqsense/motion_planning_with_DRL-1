@@ -28,7 +28,7 @@ def reset_map(size):
     make_rectangle(MAP,int(size*3/4),size,0,size)
     x1 , x2 = int(np.random.normal(size*0.5, 50)), int(np.random.normal(size*0.5,50))
     make_circle(MAP,x1,700,60)
-    make_circle(MAP,x2,300,50)
+    make_circle(MAP,x2,400,50)
     return MAP,x1,x2
 
 def angle_nomalize(z):
@@ -54,12 +54,12 @@ class MyEnv(gym.Env):
         self.MAP_RESOLUTION = 0.01
         self.MAP,self.l1,self.l2 = reset_map(self.MAP_SIZE)
         self.WORLD_SIZE = self.MAP_SIZE * self.MAP_RESOLUTION
-        self.DT = 0.01 #seconds between state updates
+        self.DT = 0.1 #seconds between state updates
 
         self.robot_radius = 0.20 #[m]
 
         #action
-        self.max_linear_velocity = 1.0 # [m/s]
+        self.max_linear_velocity = 0.5 # [m/s]
         self.min_linear_velocity = 0.0
         self.max_angular_velocity = 1.5 # [rad/s]
         self.min_angular_velocity = -1.5
@@ -175,9 +175,8 @@ class MyEnv(gym.Env):
             self.viewer.add_geom(ob1)
             
             ob2 = rendering.make_circle((60*self.MAP_RESOLUTION)*scale)
-            ob2_trans = rendering.Transform()
-            ob2_trans.set_translation((margin+self.l1*self.MAP_RESOLUTION)*scale,(margin+700*self.MAP_RESOLUTION)*scale)
-            ob2.add_attr(ob2_trans)
+            self.ob2_trans = rendering.Transform()
+            ob2.add_attr(self.ob2_trans)
             ob2.set_color(0.0,0.0,0.0)
             self.viewer.add_geom(ob2)
             
@@ -190,9 +189,8 @@ class MyEnv(gym.Env):
             self.viewer.add_geom(ob3)
             
             ob4 = rendering.make_circle((50*self.MAP_RESOLUTION)*scale)
-            ob4_trans = rendering.Transform()
-            ob4_trans.set_translation((margin+self.l2*self.MAP_RESOLUTION)*scale,(margin+300*self.MAP_RESOLUTION)*scale)
-            ob4.add_attr(ob4_trans)
+            self.ob4_trans = rendering.Transform()
+            ob4.add_attr(self.ob4_trans)
             ob4.set_color(0.0,0.0,0.0)
             self.viewer.add_geom(ob4)
 
@@ -203,7 +201,8 @@ class MyEnv(gym.Env):
         self.orientation_trans.set_translation(robot_x,robot_y)
         self.orientation_trans.set_rotation(robot_orientation)
         self.target_trans.set_translation((self.target[0]+margin)*scale,(self.target[1]+margin)*scale)
-
+        self.ob2_trans.set_translation((margin+self.l1*self.MAP_RESOLUTION)*scale,(margin+700*self.MAP_RESOLUTION)*scale)                                                                       
+        self.ob4_trans.set_translation((margin+self.l2*self.MAP_RESOLUTION)*scale,(margin+400*self.MAP_RESOLUTION)*scale)
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
 
     def close(self):

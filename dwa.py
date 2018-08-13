@@ -15,10 +15,10 @@ class Config():
         self.max_accel = env.max_accel  # [m/ss]
         self.max_dyawrate = env.max_dyawrate  # [rad/ss]
         self.v_reso = 0.01  # [m/s]
-        self.yawrate_reso = 0.1# * math.pi / 180.0  # [rad/s]
+        self.yawrate_reso = 0.1  # [rad/s]
         self.dt = 0.1  # [s]
         self.predict_time = 5.0  # [s]
-        self.to_goal_cost_gain = 100
+        self.to_goal_cost_gain = 50
         self.vel_cost_gain = 0.
         self.yaw_cost_gain = 0. 
         self.robot_radius = env.robot_radius  # [m]
@@ -109,13 +109,13 @@ def calc_obstacle_cost(traj, ob, config):
             dx = traj[j, 0] - ox
             dy = traj[j, 1] - oy
             r = np.sqrt(dx**2 + dy**2)
-            if r <= config.robot_radius:
+            if r <= config.robot_radius*1.1:
                 return float("Inf")  # collisiton
 
             if minr >= r:
                 minr = r
 
-    return 1.0 / minr  # OK
+    return 1.0 / minr 
 
 
 def calc_to_goal_cost(traj, goal, config):
@@ -143,7 +143,7 @@ def dwa_control(u, config, state):
     dw = calc_dynamic_window(u, config)
     #print(dw)
     u,min_cost,costs = calc_final_input(u, dw, config, goal,lidar)
-    #print(min_cost,costs)
+    print(min_cost,costs)
     return u
 
 def main():
@@ -162,7 +162,8 @@ def main():
             action_ = dwa_control(action, config, state)
             #print(action_)
             state_ ,reward, done, info = env.step(action_)
-            if t == 1000-1: done = True
+            if t == 1000-1:
+                done = True
             ep_r += reward
             action = action_
             state = state_

@@ -17,7 +17,7 @@ SUMMARY_DIR = './results'
 MODEL_SAVE_INTERVAL = 100
 N_WORKERS = multiprocessing.cpu_count()
 MAX_EP_STEP = 1000
-MAX_GLOBAL_EP = 10000
+MAX_GLOBAL_EP = 1000000
 GLOBAL_NET_SCOPE = 'Global_Net'
 UPDATE_GLOBAL_ITER = 5
 GAMMA = 0.99
@@ -26,8 +26,8 @@ LR_A = 0.0001    # learning rate for actor
 LR_C = 0.0001    # learning rate for critic
 GLOBAL_RUNNING_R = []
 GLOBAL_EP = 0
-NN_MODEL = './models/nn_model_ep_10000.ckpt'
-#NN_MODEL = None
+#NN_MODEL = './models/nn_model_ep_10000.ckpt'
+NN_MODEL = None
 
 env = gym.make(GAME)
 
