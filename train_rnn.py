@@ -17,15 +17,17 @@ SUMMARY_DIR = './results'
 MODEL_SAVE_INTERVAL = 100
 N_WORKERS = multiprocessing.cpu_count()
 MAX_EP_STEP = 1000
-MAX_GLOBAL_EP = 5000
+MAX_GLOBAL_EP = 10000
 GLOBAL_NET_SCOPE = 'Global_Net'
 UPDATE_GLOBAL_ITER = 5
 GAMMA = 0.99
 ENTROPY_BETA = 0.01
 LR_A = 0.0001    # learning rate for actor
-LR_C = 0.001    # learning rate for critic
+LR_C = 0.0001    # learning rate for critic
 GLOBAL_RUNNING_R = []
 GLOBAL_EP = 0
+NN_MODEL = './models/nn_model_ep_10000.ckpt'
+#NN_MODEL = None
 
 env = gym.make(GAME)
 
@@ -35,14 +37,17 @@ A_BOUND = [env.action_space.low, env.action_space.high]
 
 
 def build_summaries():
-    actor_loss = tf.Variable(0.)
-    tf.summary.scalar("Actor_loss", actor_loss)
-    critic_loss = tf.Variable(0.)
-    tf.summary.scalar("Critic_loss", critic_loss)
-    eps_total_reward = tf.Variable(0.)
-    tf.summary.scalar("Eps_total_reward", eps_total_reward)
+    value = tf.Variable(0.)
+    tf.summary.scalar("Value", value)
+    #actor_loss = tf.Variable(0.)
+    #tf.summary.scalar("Actor_loss", actor_loss)
+    #critic_loss = tf.Variable(0.)
+    #tf.summary.scalar("Critic_loss", critic_loss)
+    eps_reward = tf.Variable(0.)
+    tf.summary.scalar("Eps_reward", eps_reward)
 
-    summary_vars = [actor_loss,critic_loss, eps_total_reward]
+    #summary_vars = [actor_loss,critic_lhoss, eps_total_reward]
+    summary_vars = [value, eps_reward]
     summary_ops = tf.summary.merge_all()
 
     return summary_ops, summary_vars
@@ -209,11 +214,10 @@ class Worker(object):
                           )
                     GLOBAL_EP += 1
                     break
-            c_loss,a_loss = self.AC.get_loss(feed_dict)
+            #c_loss,a_loss = self.AC.get_loss(feed_dict)
             summary_str = self.sess.run(summary_ops, feed_dict={
-                summary_vars[0]: a_loss,
-                summary_vars[1]: c_loss,
-                summary_vars[2]: GLOBAL_RUNNING_R[-1]
+                summary_vars[0]: v_s_,
+                summary_vars[1]: GLOBAL_RUNNING_R[-1]
                 })
             writer.add_summary(summary_str,GLOBAL_EP)
             writer.flush()
@@ -239,6 +243,11 @@ if __name__ == "__main__":
     sess.run(tf.global_variables_initializer())
     writer = tf.summary.FileWriter(SUMMARY_DIR, sess.graph)
     saver = tf.train.Saver()
+
+    nn_model = NN_MODEL
+    if nn_model is not None:  # nn_model is the path to file
+        saver.restore(sess, nn_model)
+        print("Model restored.")
 
     if OUTPUT_GRAPH:
         if os.path.exists(LOG_DIR):

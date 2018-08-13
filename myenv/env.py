@@ -24,8 +24,12 @@ def reset_map(size):
     for j in range(1,size-2):
         MAP[0][j] = 1
         MAP[size-1][j] = 1
-    make_rectangle(MAP,0,50,0,200)
-    make_rectangle(MAP,150,200,0,200)
+    #make_rectangle(MAP,0,50,0,200)
+    #make_rectangle(MAP,150,200,0,200)
+    make_rectangle(MAP,350,650,600,650)
+    make_rectangle(MAP,350,650,350,400)
+    make_rectangle(MAP,150,200,375,625)
+    make_rectangle(MAP,800,850,375,625)
     #l1 = 100#int(np.random.rand()*100)+50                                                         
     #l2 = 120#int(np.random.rand()*100)+50
     #make_circle(MAP,l1,80,10)
@@ -51,14 +55,14 @@ class MyEnv(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array']}
 
     def __init__(self):
-        self.MAP_SIZE = 200
+        self.MAP_SIZE = 1000
         self.MAP_RESOLUTION = 0.01
         #self.MAP,self.l1, self.l2 = reset_map(self.MAP_SIZE)
         self.MAP = reset_map(self.MAP_SIZE)
         self.WORLD_SIZE = self.MAP_SIZE * self.MAP_RESOLUTION
         self.DT = 0.01 #seconds between state updates
 
-        self.robot_radius = 0.05
+        self.robot_radius = 0.20 #[m]
 
         #action
         self.max_linear_velocity = 1.0
@@ -96,14 +100,15 @@ class MyEnv(gym.Env):
         self.reset()
 
     def reset(self):
-        #theta = np.random.rand()*2.0*np.pi
-        #self.pose = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.5, theta])
+        theta = np.random.rand()*2.0*np.pi
+        self.pose = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.5, theta])
+        #while True:
+        #    self.pose = np.array([np.random.rand()*0.40+0.80, 0.20,np.random.rand()*0.2*np.pi+0.4*np.pi])
+        #    if not self.is_collision(self.pose):
+        #        break
         while True:
-            self.pose = np.array([np.random.rand()*0.40+0.80, 0.20,np.random.rand()*0.2*np.pi+0.4*np.pi])
-            if not self.is_collision(self.pose):
-                break
-        while True:
-            self.target = np.array([np.random.rand()*0.40+0.80, 1.8,0.0])
+            self.target = np.array([np.random.rand()*self.WORLD_SIZE, np.random.rand()*self.WORLD_SIZE,0.0])
+            #self.target = np.array([np.random.rand()*0.40+0.80, 1.8,0.0])
             if not self.is_collision(self.target):
                 break
         self.MAP = reset_map(self.MAP_SIZE) 
@@ -174,10 +179,10 @@ class MyEnv(gym.Env):
             target.set_color(1.0,0.0,0.0)
             self.viewer.add_geom(target)
             #obstract
-            l = (margin+0*self.MAP_RESOLUTION) * scale
-            r = (margin+50*self.MAP_RESOLUTION) * scale
-            t = (margin+0*self.MAP_RESOLUTION) * scale
-            b = (margin+200*self.MAP_RESOLUTION) * scale
+            l = (margin+350*self.MAP_RESOLUTION) * scale
+            r = (margin+650*self.MAP_RESOLUTION) * scale
+            t = (margin+350*self.MAP_RESOLUTION) * scale
+            b = (margin+400*self.MAP_RESOLUTION) * scale
             ob1 = rendering.FilledPolygon([(l,b),(l,t),(r,t),(r,b)])
             ob1.set_color(0.,0.,0.)
             self.viewer.add_geom(ob1)
@@ -187,40 +192,40 @@ class MyEnv(gym.Env):
             #ob2.add_attr(ob2_trans)
             #ob2.set_color(0.0,0.0,0.0)
             #self.viewer.add_geom(ob2)
-            l = (margin+150*self.MAP_RESOLUTION) * scale
-            r = (margin+200*self.MAP_RESOLUTION) * scale
-            t = (margin+0*self.MAP_RESOLUTION) * scale
-            b = (margin+200*self.MAP_RESOLUTION) * scale
+            l = (margin+350*self.MAP_RESOLUTION) * scale
+            r = (margin+650*self.MAP_RESOLUTION) * scale
+            t = (margin+600*self.MAP_RESOLUTION) * scale
+            b = (margin+650*self.MAP_RESOLUTION) * scale
             ob3 = rendering.FilledPolygon([(l,b),(l,t),(r,t),(r,b)])
             ob3.set_color(0.,0.,0.)
             self.viewer.add_geom(ob3)
             
-            ob4 = rendering.make_circle(10)
-            self.ob4_trans = rendering.Transform()
-            ob4.add_attr(self.ob4_trans)
-            ob4.set_color(0.0,0.0,0.0)
+            #ob4 = rendering.make_circle(10)
+            #self.ob4_trans = rendering.Transform()
+            #ob4.add_attr(self.ob4_trans)
+            #ob4.set_color(0.0,0.0,0.0)
             #self.viewer.add_geom(ob4)
 
-            ob5 = rendering.make_circle(20)
-            self.ob5_trans = rendering.Transform()
-            ob5.add_attr(self.ob5_trans)
-            ob5.set_color(0.0,0.0,0.0)
+            #ob5 = rendering.make_circle(20)
+            #self.ob5_trans = rendering.Transform()
+            #ob5.add_attr(self.ob5_trans)
+            #ob5.set_color(0.0,0.0,0.0)
             #self.viewer.add_geom(ob5)
 
-            #l = (margin+self.l1*self.MAP_RESOLUTION) * scale
-            #r = (margin+(self.l1+10)*self.MAP_RESOLUTION) * scale
-            #t = (margin+80*self.MAP_RESOLUTION) * scale
-            #b = (margin+90*self.MAP_RESOLUTION) * scale
-            #ob4 = rendering.FilledPolygon([(l,b),(l,t),(r,t),(r,b)])
-            #ob4.set_color(0.,0.,0.)
-            #self.viewer.add_geom(ob4)
-            #l = (margin+self.l2*self.MAP_RESOLUTION) * scale
-            #r = (margin+(self.l2+20)*self.MAP_RESOLUTION) * scale
-            #t = (margin+130*self.MAP_RESOLUTION) * scale
-            #b = (margin+150*self.MAP_RESOLUTION) * scale
-            #ob5 = rendering.FilledPolygon([(l,b),(l,t),(r,t),(r,b)])
-            #ob5.set_color(0.,0.,0.)
-            #self.viewer.add_geom(ob5)
+            l = (margin+150*self.MAP_RESOLUTION) * scale
+            r = (margin+200*self.MAP_RESOLUTION) * scale
+            t = (margin+375*self.MAP_RESOLUTION) * scale
+            b = (margin+625*self.MAP_RESOLUTION) * scale
+            ob4 = rendering.FilledPolygon([(l,b),(l,t),(r,t),(r,b)])
+            ob4.set_color(0.,0.,0.)
+            self.viewer.add_geom(ob4)
+            l = (margin+800*self.MAP_RESOLUTION) * scale
+            r = (margin+850*self.MAP_RESOLUTION) * scale
+            t = (margin+375*self.MAP_RESOLUTION) * scale
+            b = (margin+625*self.MAP_RESOLUTION) * scale
+            ob5 = rendering.FilledPolygon([(l,b),(l,t),(r,t),(r,b)])
+            ob5.set_color(0.,0.,0.)
+            self.viewer.add_geom(ob5)
 
         robot_x = (margin + self.pose[0]) * scale
         robot_y = (margin + self.pose[1]) * scale
@@ -250,11 +255,11 @@ class MyEnv(gym.Env):
         elif (not self.is_movable(self.pose)) or self.is_collision(self.pose):
             reward = -5
         else:
-            reward = (self.pre_dis-self.dis)*0.
-        if abs(self.pre_dis-self.dis) < 1e-6:
-            reward -=0.05
+            reward = (self.pre_dis-self.dis)*0.15
+#        if abs(self.pre_dis-self.dis) < 1e-6:
+#            reward -=0.05
         self.pre_dis = self.dis
-        reward += 1./(200.*np.pi)*angle_diff(np.arctan2((self.pose[1]-self.target[1]),(self.pose[0]-self.target[0])),self.pose[2])
+#        reward += 1./(200.*np.pi)*angle_diff(np.arctan2((self.pose[1]-self.target[1]),(self.pose[0]-self.target[0])),self.pose[2])
         return reward
 
     def is_movable(self, pose):
