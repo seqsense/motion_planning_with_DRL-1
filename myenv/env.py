@@ -71,7 +71,7 @@ class MyEnv(gym.Env):
         self.min_angular_velocity = -1.0
 
         self.action_low = np.array([self.min_linear_velocity,self.min_angular_velocity])
-        self.action_high = np.array([self.max_linear_velocity,self.max_linear_velocity])
+        self.action_high = np.array([self.max_linear_velocity,self.max_angular_velocity])
 
         self.action_space = spaces.Box(self.action_low, self.action_high, dtype = np.float32)
         
