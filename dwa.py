@@ -3,7 +3,7 @@ import numpy as np
 import gym
 import myenv
 
-env = gym.make('myenv-v0')
+env = gym.make('myenv-v2')
 class Config():
     # simulation parameters
     def __init__(self):
@@ -12,14 +12,14 @@ class Config():
         self.min_speed = env.min_linear_velocity  # [m/s]
         self.max_yawrate = env.max_angular_velocity  # [rad/s]
         self.min_yawrate = env.min_angular_velocity  # [rad/s]
-        self.max_accel = 0.2  # [m/ss]
-        self.max_dyawrate = 40.0 * math.pi / 180.0  # [rad/ss]
+        self.max_accel = env.max_accel  # [m/ss]
+        self.max_dyawrate = env.max_dyawrate  # [rad/ss]
         self.v_reso = 0.01  # [m/s]
         self.yawrate_reso = 0.1# * math.pi / 180.0  # [rad/s]
         self.dt = 0.1  # [s]
-        self.predict_time = 1.5  # [s]
+        self.predict_time = 5.0  # [s]
         self.to_goal_cost_gain = 100
-        self.vel_cost_gain = -0.5
+        self.vel_cost_gain = 0.
         self.yaw_cost_gain = 0. 
         self.robot_radius = env.robot_radius  # [m]
 
@@ -133,7 +133,7 @@ def calc_vel_cost(v,y,config):
 
 def dwa_control(u, config, state):
     #print(state)
-	# Dynamic Window control
+        # Dynamic Window control
     lidar = np.zeros(env.NUM_LIDAR)
     for i in range(env.NUM_LIDAR):
         lidar[i] = state[i]
@@ -143,7 +143,7 @@ def dwa_control(u, config, state):
     dw = calc_dynamic_window(u, config)
     #print(dw)
     u,min_cost,costs = calc_final_input(u, dw, config, goal,lidar)
-    print(min_cost,costs)
+    #print(min_cost,costs)
     return u
 
 def main():

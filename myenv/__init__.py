@@ -9,3 +9,8 @@ register(
         id='myenv-v1',
         entry_point='myenv.env_dynamic:MyEnv'
 )
+
+register(
+        id='myenv-v2',
+        entry_point='myenv.env_ex:MyEnv'
+)

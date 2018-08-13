@@ -1,7 +1,7 @@
 import gym
 import myenv
 
-env = gym.make('myenv-v0')
+env = gym.make('myenv-v2')
 
 for i_episode in range(100):
     observation = env.reset()
