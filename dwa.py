@@ -3,8 +3,8 @@ import numpy as np
 import gym
 import myenv
 
-env = gym.make('myenv-v2')
-class Config():
+env = gym.make('myenv-v0')
+class Expert():
     # simulation parameters
     def __init__(self):
         # robot parameter
@@ -20,146 +20,146 @@ class Config():
         self.predict_time = 5.0  # [s]
         self.to_goal_cost_gain = 50
         self.vel_cost_gain = 0.
-        self.yaw_cost_gain = 0. 
+        self.yaw_cost_gain = 0.
         self.robot_radius = env.robot_radius  # [m]
 
-def motion(x, u, dt):
-    # motion model
+    def motion(self,x, u, dt):
+        # motion model
 
-    x[0] += u[0] * math.cos(x[2]) * dt
-    x[1] += u[0] * math.sin(x[2]) * dt
-    x[2] += u[1] * dt
-    x[2] %= 2.0 * np.pi
-    return x
+        x[0] += u[0] * math.cos(x[2]) * dt
+        x[1] += u[0] * math.sin(x[2]) * dt
+        x[2] += u[1] * dt
+        x[2] %= 2.0 * np.pi
+        return x
 
-def calc_dynamic_window(u, config):
+    def calc_dynamic_window(self,u):
 
-    # Dynamic window from robot specification
-    Vs = [config.min_speed, config.max_speed,
-          config.min_yawrate, config.max_yawrate]
+        # Dynamic window from robot specification
+        Vs = [self.min_speed, self.max_speed,
+              self.min_yawrate, self.max_yawrate]
 
-    # Dynamic window from motion model
-    Vd = [u[0] - config.max_accel * config.dt,
-          u[0] + config.max_accel * config.dt,
-          u[1] - config.max_dyawrate * config.dt,
-          u[1] + config.max_dyawrate * config.dt]
-    #  print(Vs, Vd)
+        # Dynamic window from motion model
+        Vd = [u[0] - self.max_accel * self.dt,
+              u[0] + self.max_accel * self.dt,
+              u[1] - self.max_dyawrate * self.dt,
+              u[1] + self.max_dyawrate * self.dt]
+        #  print(Vs, Vd)
 
-    #  [vmin,vmax, yawrate min, yawrate max]
-    dw = [max(Vs[0], Vd[0]), min(Vs[1], Vd[1]),
-          max(Vs[2], Vd[2]), min(Vs[3], Vd[3])]
-    #print(dw)
+        #  [vmin,vmax, yawrate min, yawrate max]
+        dw = [max(Vs[0], Vd[0]), min(Vs[1], Vd[1]),
+              max(Vs[2], Vd[2]), min(Vs[3], Vd[3])]
+        #print(dw)
 
-    return dw 
-
-
-def calc_trajectory(v, y, config):
-
-    x = np.zeros(3)
-    traj = np.array(x)
-    time = 0
-    while time <= config.predict_time:
-        x = motion(x, [v, y], config.dt)
-        traj = np.vstack((traj, x))
-        time += config.dt
-
-    #  print(len(traj))
-    return traj
+        return dw
 
 
-def calc_final_input(u, dw, config, goal, ob):
+    def calc_trajectory(self,v, y):
 
-    min_cost = 10000.0
-    costs = [0,0,0]
-    min_u = u
-    min_u[0] = 0.0
+        x = np.zeros(3)
+        traj = np.array(x)
+        time = 0
+        while time <= self.predict_time:
+            x = self.motion(x, [v, y], self.dt)
+            traj = np.vstack((traj, x))
+            time += self.dt
 
-    # evalucate all trajectory with sampled input in dynamic window
-    for v in np.arange(dw[0], dw[1], config.v_reso):
-        for y in np.arange(dw[2], dw[3], config.yawrate_reso):
-            traj = calc_trajectory(v, y, config)
-
-            # calc cost
-            to_goal_cost = calc_to_goal_cost(traj, goal, config)
-            ob_cost = calc_obstacle_cost(traj, ob, config)
-            v_cost = calc_vel_cost(v,y,config)
-            #print(to_goal_cost,ob_cost)
-
-            final_cost = to_goal_cost + ob_cost + v_cost
-            #print(v,y,final_cost)
-            # search minimum trajectory
-            if min_cost >= final_cost:
-                min_cost = final_cost
-                costs = [to_goal_cost,ob_cost,v_cost]
-                min_u = [v, y]
-
-    return min_u,min_cost,costs
+        #  print(len(traj))
+        return traj
 
 
-def calc_obstacle_cost(traj, ob, config):
-    # calc obstacle cost inf: collistion, 0:free
+    def calc_final_input(self,u, dw, goal, ob):
 
-    minr = float("Inf")
-    for i in range(env.NUM_LIDAR):
-        oz = (2.0*i/env.NUM_LIDAR-1.0)*(np.pi/2.0)
-        ox = ob[i]*np.cos(oz)
-        oy = ob[i]*np.sin(oz)
-        
-        for j in range(len(traj[:,1])):
-            dx = traj[j, 0] - ox
-            dy = traj[j, 1] - oy
-            r = np.sqrt(dx**2 + dy**2)
-            if r <= config.robot_radius*1.1:
-                return float("Inf")  # collisiton
+        min_cost = 10000.0
+        costs = [0,0,0]
+        min_u = u
+        min_u[0] = 0.0
 
-            if minr >= r:
-                minr = r
+        # evalucate all trajectory with sampled input in dynamic window
+        for v in np.arange(dw[0], dw[1], self.v_reso):
+            for y in np.arange(dw[2], dw[3], self.yawrate_reso):
+                traj = self.calc_trajectory(v, y)
 
-    return 1.0 / minr 
+                # calc cost
+                to_goal_cost = self.calc_to_goal_cost(traj, goal)
+                ob_cost = self.calc_obstacle_cost(traj, ob)
+                v_cost = self.calc_vel_cost(v,y)
+                #print(to_goal_cost,ob_cost)
+
+                final_cost = to_goal_cost + ob_cost + v_cost
+                #print(v,y,final_cost)
+                # search minimum trajectory
+                if min_cost >= final_cost:
+                    min_cost = final_cost
+                    costs = [to_goal_cost,ob_cost,v_cost]
+                    min_u = [v, y]
+
+        return min_u,min_cost,costs
 
 
-def calc_to_goal_cost(traj, goal, config):
-    # calc to goal cost. It is 2D norm.
+    def calc_obstacle_cost(self,traj, ob):
+        # calc obstacle cost inf: collistion, 0:free
 
-    dy = goal[0] - traj[-1, 0]
-    dx = goal[1] - traj[-1, 1]
-    goal_dis = math.sqrt(dx**2 + dy**2)
-    cost = config.to_goal_cost_gain * goal_dis
+        minr = float("Inf")
+        for i in range(env.NUM_LIDAR):
+            oz = (2.0*i/env.NUM_LIDAR-1.0)*(np.pi/2.0)
+            ox = ob[i]*np.cos(oz)
+            oy = ob[i]*np.sin(oz)
 
-    return cost
+            for j in range(len(traj[:,1])):
+                dx = traj[j, 0] - ox
+                dy = traj[j, 1] - oy
+                r = np.sqrt(dx**2 + dy**2)
+                if r <= self.robot_radius*1.1:
+                    return float("Inf")  # collisiton
 
-def calc_vel_cost(v,y,config):
-    return config.vel_cost_gain * v + config.yaw_cost_gain * abs(y)
+                if minr >= r:
+                    minr = r
 
-def dwa_control(u, config, state):
-    #print(state)
-        # Dynamic Window control
-    lidar = np.zeros(env.NUM_LIDAR)
-    for i in range(env.NUM_LIDAR):
-        lidar[i] = state[i]
-    #print(lidar)
-    goal = np.array([state[env.NUM_LIDAR]*state[env.NUM_LIDAR+2], state[env.NUM_LIDAR]*state[env.NUM_LIDAR+1]])
-    #print(goal)
-    dw = calc_dynamic_window(u, config)
-    #print(dw)
-    u,min_cost,costs = calc_final_input(u, dw, config, goal,lidar)
-    print(min_cost,costs)
-    return u
+        return 1.0 / minr
+
+
+    def calc_to_goal_cost(self,traj, goal):
+        # calc to goal cost. It is 2D norm.
+
+        dy = goal[0] - traj[-1, 0]
+        dx = goal[1] - traj[-1, 1]
+        goal_dis = math.sqrt(dx**2 + dy**2)
+        cost = self.to_goal_cost_gain * goal_dis
+
+        return cost
+
+    def calc_vel_cost(self,v,y):
+        return self.vel_cost_gain * v + self.yaw_cost_gain * abs(y)
+
+    def dwa_control(self,u, state):
+        #print(state)
+            # Dynamic Window control
+        lidar = np.zeros(env.NUM_LIDAR)
+        for i in range(env.NUM_LIDAR):
+            lidar[i] = state[i]
+        #print(lidar)
+        goal = np.array([state[env.NUM_LIDAR]*state[env.NUM_LIDAR+2], state[env.NUM_LIDAR]*state[env.NUM_LIDAR+1]])
+        #print(goal)
+        dw = self.calc_dynamic_window(u)
+        #print(dw)
+        u,min_cost,costs = self.calc_final_input(u, dw, goal,lidar)
+        #print(min_cost,costs)
+        return u
 
 def main():
-    
+
     for episode in range(100):
         state = env.reset()
         done = False
         ep_r = 0
-    
+
         action = np.array([0.0, 0.0])
-        config = Config()
+        expert = Expert()
 
         for t in range(1000):
             env.render()
-            
-            action_ = dwa_control(action, config, state)
+
+            action_ = expert.dwa_control(action, state)
             #print(action_)
             state_ ,reward, done, info = env.step(action_)
             if t == 1000-1:

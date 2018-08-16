@@ -69,6 +69,8 @@ class MyEnv(gym.Env):
         self.min_linear_velocity = 0.0
         self.max_angular_velocity = 1.0
         self.min_angular_velocity = -1.0
+        self.max_accel = 1.5
+        self.max_dyawrate = 3.0
 
         self.action_low = np.array([self.min_linear_velocity,self.min_angular_velocity])
         self.action_high = np.array([self.max_linear_velocity,self.max_angular_velocity])
