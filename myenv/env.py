@@ -253,9 +253,9 @@ class MyEnv(gym.Env):
         reward = 0
         self.dis = np.sqrt((self.target[0]-self.pose[0])**2 + (self.target[1]-self.pose[1])**2)
         if self.is_goal():
-            reward = 5
+            reward = 5.
         elif (not self.is_movable(self.pose)) or self.is_collision(self.pose):
-            reward = -5
+            reward = -5.
         else:
             reward = (self.pre_dis-self.dis)*0.15
 #        if abs(self.pre_dis-self.dis) < 1e-6:
