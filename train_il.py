@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 
 GAME = 'myenv-v0'
 OUTPUT_GRAPH = True
-LOG_DIR = './log'
-MODEL_DIR = './models'
-SUMMARY_DIR = './results'
+LOG_DIR = './il/log'
+MODEL_DIR = './il/models'
+SUMMARY_DIR = './il/results'
 MODEL_SAVE_INTERVAL = 100
 N_WORKERS = multiprocessing.cpu_count()
 MAX_EP_STEP = 1000
@@ -159,8 +159,8 @@ class Worker(object):
             a = np.array([0.0,0.0])
             expert = Expert()
             for ep_t in range(MAX_EP_STEP):
-                #if self.name == 'W_0':
-                 #   self.env.render()
+                if self.name == 'W_0':
+                    self.env.render()
                 expert_a = expert.dwa_control(a,s)
                 a_, rnn_state_ = self.AC.choose_action(s, rnn_state)  # get the action and next rnn state
                 s_, r, done, info = self.env.step(a_)

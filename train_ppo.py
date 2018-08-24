@@ -45,14 +45,14 @@ EPS_START = 1
 EPS_END = 0.01
 EPS_STEPS = 500*N_WORKERS*MAX_STEPS
 
-TARGET_SCORE = 0
-GLOBAL_EP = 10200
+TARGET_SCORE = 8
+GLOBAL_EP = 56500
 MODEL_SAVE_INTERVAL = 100
 LOG_DIR = './log'
 MODEL_DIR = './models'
 SUMMARY_DIR = './results'
 #NN_MODEL = None
-NN_MODEL = './models/ppo_model_ep_10200.ckpt'
+NN_MODEL = './models/ppo_model_ep_56500.ckpt'
 
 def build_summaries():
     reward = tf.Variable(0.)
@@ -314,7 +314,7 @@ class Worker_thread:
 # -- main ここからメイン関数です------------------------------
 if __name__ == "__main__":
     # global変数の定義 & セッションの開始です
-    frames = 0              # 全スレッドで共有して使用する総episode数
+    frames = GLOBAL_EP * MAX_STEPS               # 全スレッドで共有して使用する総episode数
     isLearned = False        # 学習が終了したことを示すフラグ
     config = tf.ConfigProto(allow_soft_placement = True)
     SESS = tf.Session(config = config)

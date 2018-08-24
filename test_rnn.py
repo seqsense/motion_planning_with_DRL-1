@@ -9,7 +9,7 @@ MAX_EP = 10
 GLOBAL_RUNNING_R = []
 GLOBAL_EP = 0
 GLOBAL_NET_SCOPE = 'Global_Net'
-NN_MODEL = './models/nn_model_ep_700.ckpt'
+NN_MODEL = './models/nn_model_ep_533300.ckpt'
 env = gym.make(GAME)
 
 N_S = env.observation_space.shape[0]
