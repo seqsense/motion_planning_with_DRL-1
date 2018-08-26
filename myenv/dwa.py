@@ -8,12 +8,12 @@ class Expert():
     # simulation parameters
     def __init__(self):
         # robot parameter
-        self.max_speed = env.max_linear_velocity  # [m/s]
-        self.min_speed = env.min_linear_velocity  # [m/s]
-        self.max_yawrate = env.max_angular_velocity  # [rad/s]
-        self.min_yawrate = env.min_angular_velocity  # [rad/s]
-        self.max_accel = env.max_accel  # [m/ss]
-        self.max_dyawrate = env.max_dyawrate  # [rad/ss]
+        self.max_speed = 1.0#env.max_linear_velocity  # [m/s]
+        self.min_speed = 0.0#env.min_linear_velocity  # [m/s]
+        self.max_yawrate = 1.0#env.max_angular_velocity  # [rad/s]
+        self.min_yawrate = -1.0#env.min_angular_velocity  # [rad/s]
+        self.max_accel = 1.5#env.max_accel  # [m/ss]
+        self.max_dyawrate = 3.0#env.max_dyawrate  # [rad/ss]
         self.v_reso = 0.01  # [m/s]
         self.yawrate_reso = 0.1  # [rad/s]
         self.dt = 0.1  # [s]
@@ -21,7 +21,7 @@ class Expert():
         self.to_goal_cost_gain = 50
         self.vel_cost_gain = 0.
         self.yaw_cost_gain = 0.
-        self.robot_radius = env.robot_radius  # [m]
+        self.robot_radius = 0.2#env.robot_radius  # [m]
 
     def motion(self,x, u, dt):
         # motion model
@@ -100,8 +100,8 @@ class Expert():
         # calc obstacle cost inf: collistion, 0:free
 
         minr = float("Inf")
-        for i in range(env.NUM_LIDAR):
-            oz = (2.0*i/env.NUM_LIDAR-1.0)*(np.pi/2.0)
+        for i in range(10):
+            oz = (2.0*i/10-1.0)*(np.pi/2.0)
             ox = ob[i]*np.cos(oz)
             oy = ob[i]*np.sin(oz)
 
@@ -134,11 +134,11 @@ class Expert():
     def dwa_control(self,u, state):
         #print(state)
             # Dynamic Window control
-        lidar = np.zeros(env.NUM_LIDAR)
-        for i in range(env.NUM_LIDAR):
+        lidar = np.zeros(10)
+        for i in range(10):
             lidar[i] = state[i]
         #print(lidar)
-        goal = np.array([state[env.NUM_LIDAR]*state[env.NUM_LIDAR+2], state[env.NUM_LIDAR]*state[env.NUM_LIDAR+1]])
+        goal = np.array([state[10]*state[12], state[10]*state[11]])
         #print(goal)
         dw = self.calc_dynamic_window(u)
         #print(dw)

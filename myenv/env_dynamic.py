@@ -94,7 +94,7 @@ class MyEnv(gym.Env):
 
     def reset(self):
         self.pose = np.array([np.random.rand()*0.40+0.80, 0.20,np.random.rand()*0.2*np.pi+0.4*np.pi])
-        self.target = np.array([np.random.rand()*0.40+0.80, 1.8,0.0])
+        self.target = np.array([np.random.rand()*0.40+0.80, 1.8,-0.5*np.pi])
 
         self.ob_pose = self.target
         self.ob_target = self.pose        
