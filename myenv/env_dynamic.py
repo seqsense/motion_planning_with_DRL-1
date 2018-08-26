@@ -105,7 +105,7 @@ class MyEnv(gym.Env):
         self.pre_dis = self.dis
         self.observation = self.observe(self.pose,self.target)
 
-        self.ob_observation = self.observe(self.ob_pose, self.target)
+        self.ob_observation = self.observe(self.ob_pose, self.ob_target)
         self.ob_action = np.array([0.0,0.0])
         self.done = False
         return self.observation
@@ -119,7 +119,7 @@ class MyEnv(gym.Env):
         #self.pose[2] = angle_nomalize(self.pose[2])
         
         self.ob_action = self.ob.dwa_control(self.ob_action,self.ob_observation)
-
+        print(self.ob_action)
         #ob pose update
         self.ob_pose[0] = self.ob_pose[0] + self.ob_action[0]*np.cos(self.ob_pose[2])*self.DT
         self.ob_pose[1] = self.ob_pose[1] + self.ob_action[0]*np.sin(self.ob_pose[2])*self.DT
@@ -127,6 +127,7 @@ class MyEnv(gym.Env):
         self.ob_pose[2] %= 2.0 * np.pi
                 
         self.observation = self.observe(self.pose,self.target)
+        self.ob_observation = self.observe(self.ob_pose, self.ob_target)
         reward = self.get_reward()
         self.done = self.is_done()
         return self.observation, reward, self.done, {}
