@@ -4,6 +4,7 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
+from dwa import Expert
 
 def make_circle(MAP,cx,cy,r):
     for i in range(cx-r-1,cx+r):
@@ -24,13 +25,7 @@ def reset_map(size):
     for j in range(1,size-2):
         MAP[0][j] = 1
         MAP[size-1][j] = 1
-    make_rectangle(MAP,0,50,0,200)
-    make_rectangle(MAP,150,200,0,200)
-    #l1 = 100#int(np.random.rand()*100)+50                                                         
-    #l2 = 120#int(np.random.rand()*100)+50
-    #make_circle(MAP,l1,80,10)
-    #make_circle(MAP,l2,130,20)
-    return MAP#,l1,l2
+    return MAP
 
 def angle_nomalize(z):
     return np.arctan2(np.sin(z),np.cos(z))
@@ -53,12 +48,14 @@ class MyEnv(gym.Env):
     def __init__(self):
         self.MAP_SIZE = 200
         self.MAP_RESOLUTION = 0.01
-        #self.MAP,self.l1, self.l2 = reset_map(self.MAP_SIZE)
         self.MAP = reset_map(self.MAP_SIZE)
         self.WORLD_SIZE = self.MAP_SIZE * self.MAP_RESOLUTION
         self.DT = 0.01 #seconds between state updates
 
         self.robot_radius = 0.05
+
+        #dynamic obstract
+        self.ob = Expert()
 
         #action
         self.max_linear_velocity = 1.0
@@ -96,21 +93,20 @@ class MyEnv(gym.Env):
         self.reset()
 
     def reset(self):
-        #theta = np.random.rand()*2.0*np.pi
-        #self.pose = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.5, theta])
-        while True:
-            self.pose = np.array([np.random.rand()*0.40+0.80, 0.20,np.random.rand()*0.2*np.pi+0.4*np.pi])
-            if not self.is_collision(self.pose):
-                break
-        while True:
-            self.target = np.array([np.random.rand()*0.40+0.80, 1.8,0.0])
-            if not self.is_collision(self.target):
-                break
+        self.pose = np.array([np.random.rand()*0.40+0.80, 0.20,np.random.rand()*0.2*np.pi+0.4*np.pi])
+        self.target = np.array([np.random.rand()*0.40+0.80, 1.8,0.0])
+
+        self.ob_pose = self.target
+        self.ob_target = self.pose        
+        
         self.MAP = reset_map(self.MAP_SIZE) 
-        #self.MAP, self.l1, self.l2 = reset_map(self.MAP_SIZE) 
+        
         self.dis = np.sqrt((self.target[0]-self.pose[0])**2 + (self.target[1]-self.pose[1])**2)
         self.pre_dis = self.dis
-        self.observation = self.observe()
+        self.observation = self.observe(self.pose,self.target)
+
+        self.ob_observation = self.observe(self.ob_pose, self.target)
+        self.ob_action = np.array([0.0,0.0])
         self.done = False
         return self.observation
 
@@ -121,8 +117,16 @@ class MyEnv(gym.Env):
         self.pose[2] = self.pose[2] + action[1]*self.DT
         self.pose[2] %= 2.0 * np.pi
         #self.pose[2] = angle_nomalize(self.pose[2])
+        
+        self.ob_action = self.ob.dwa_control(self.ob_action,self.ob_observation)
+
+        #ob pose update
+        self.ob_pose[0] = self.ob_pose[0] + self.ob_action[0]*np.cos(self.ob_pose[2])*self.DT
+        self.ob_pose[1] = self.ob_pose[1] + self.ob_action[0]*np.sin(self.ob_pose[2])*self.DT
+        self.ob_pose[2] = self.ob_pose[2] + self.ob_action[1]*self.DT
+        self.ob_pose[2] %= 2.0 * np.pi
                 
-        self.observation = self.observe()
+        self.observation = self.observe(self.pose,self.target)
         reward = self.get_reward()
         self.done = self.is_done()
         return self.observation, reward, self.done, {}
@@ -156,82 +160,40 @@ class MyEnv(gym.Env):
             robot_orientation.set_color(0.0,1.0,0.0)
             robot_orientation.add_attr(self.orientation_trans)
             self.viewer.add_geom(robot_orientation)
-            #lidar
-            #for i in range(self.NUM_LIDAR):
-            #    lidar = rendering.make_capsule(scale*self.observation[i],1.0)
-            #    lidar_trans = rendering.Transform()
-            #    robot_x = (margin + self.pose[0]) * scale
-            #    robot_y = (margin + self.pose[1]) * scale
-            #    lidar_trans.set_translation(robot_x,robot_y)
-            #    lidar_trans.set_rotation(self.pose[2] + i*self.ANGLE_INCREMENT - self.MAX_ANGLE)
-            #    lidar.set_color(1.0,0.0,0.0)
-            #    lidar.add_attr(lidar_trans)
-            #    self.viewer.add_geom(lidar)
             #target
             target = rendering.make_circle(self.robot_radius*0.3*scale)
             self.target_trans = rendering.Transform()
             target.add_attr(self.target_trans)
             target.set_color(1.0,0.0,0.0)
             self.viewer.add_geom(target)
-            #obstract
-            l = (margin+0*self.MAP_RESOLUTION) * scale
-            r = (margin+50*self.MAP_RESOLUTION) * scale
-            t = (margin+0*self.MAP_RESOLUTION) * scale
-            b = (margin+200*self.MAP_RESOLUTION) * scale
-            ob1 = rendering.FilledPolygon([(l,b),(l,t),(r,t),(r,b)])
-            ob1.set_color(0.,0.,0.)
-            self.viewer.add_geom(ob1)
-            #ob2 = rendering.make_circle((8*self.MAP_RESOLUTION)*scale)
-            #ob2_trans = rendering.Transform()
-            #ob2_trans.set_translation((margin+70*self.MAP_RESOLUTION)*scale,(margin+140*self.MAP_RESOLUTION)*scale)
-            #ob2.add_attr(ob2_trans)
-            #ob2.set_color(0.0,0.0,0.0)
-            #self.viewer.add_geom(ob2)
-            l = (margin+150*self.MAP_RESOLUTION) * scale
-            r = (margin+200*self.MAP_RESOLUTION) * scale
-            t = (margin+0*self.MAP_RESOLUTION) * scale
-            b = (margin+200*self.MAP_RESOLUTION) * scale
-            ob3 = rendering.FilledPolygon([(l,b),(l,t),(r,t),(r,b)])
-            ob3.set_color(0.,0.,0.)
-            self.viewer.add_geom(ob3)
-            
-            ob4 = rendering.make_circle(10)
-            self.ob4_trans = rendering.Transform()
-            ob4.add_attr(self.ob4_trans)
-            ob4.set_color(0.0,0.0,0.0)
-            #self.viewer.add_geom(ob4)
-
-            ob5 = rendering.make_circle(20)
-            self.ob5_trans = rendering.Transform()
-            ob5.add_attr(self.ob5_trans)
-            ob5.set_color(0.0,0.0,0.0)
-            #self.viewer.add_geom(ob5)
-
-            #l = (margin+self.l1*self.MAP_RESOLUTION) * scale
-            #r = (margin+(self.l1+10)*self.MAP_RESOLUTION) * scale
-            #t = (margin+80*self.MAP_RESOLUTION) * scale
-            #b = (margin+90*self.MAP_RESOLUTION) * scale
-            #ob4 = rendering.FilledPolygon([(l,b),(l,t),(r,t),(r,b)])
-            #ob4.set_color(0.,0.,0.)
-            #self.viewer.add_geom(ob4)
-            #l = (margin+self.l2*self.MAP_RESOLUTION) * scale
-            #r = (margin+(self.l2+20)*self.MAP_RESOLUTION) * scale
-            #t = (margin+130*self.MAP_RESOLUTION) * scale
-            #b = (margin+150*self.MAP_RESOLUTION) * scale
-            #ob5 = rendering.FilledPolygon([(l,b),(l,t),(r,t),(r,b)])
-            #ob5.set_color(0.,0.,0.)
-            #self.viewer.add_geom(ob5)
+            #dynamic obstract
+            ob = rendering.make_circle(self.robot_radius*scale)
+            self.ob_trans = rendering.Transform()
+            ob.add_attr(self.ob_trans)
+            ob.set_color(0.0,1.0,1.0)
+            self.viewer.add_geom(ob)
+            ob_orientation = rendering.make_capsule(self.robot_radius*scale,1.0)
+            self.ob_orientation_trans = rendering.Transform()
+            ob_orientation.set_color(0.0,1.0,0.0)
+            ob_orientation.add_attr(self.ob_orientation_trans)
+            self.viewer.add_geom(ob_orientation)
 
         robot_x = (margin + self.pose[0]) * scale
         robot_y = (margin + self.pose[1]) * scale
         robot_orientation = self.pose[2]
+        ob_x = (margin + self.ob_pose[0]) * scale
+        ob_y = (margin + self.ob_pose[1]) * scale
+        ob_orientation = self.ob_pose[2]
+        
         self.robot_trans.set_translation(robot_x, robot_y) 
         self.orientation_trans.set_translation(robot_x,robot_y)
         self.orientation_trans.set_rotation(robot_orientation)
+        
+        self.ob_trans.set_translation(ob_x, ob_y) 
+        self.ob_orientation_trans.set_translation(ob_x,ob_y)
+        self.ob_orientation_trans.set_rotation(ob_orientation)
+        
         self.target_trans.set_translation((self.target[0]+margin)*scale,(self.target[1]+margin)*scale)
-        #self.ob4_trans.set_translation((margin+self.l1*self.MAP_RESOLUTION)*scale,(margin+80*self.MAP_RESOLUTION)*scale)
-        #self.ob5_trans.set_translation((margin+self.l2*self.MAP_RESOLUTION)*scale,(margin+130*self.MAP_RESOLUTION)*scale)
-
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
 
     def close(self):
@@ -276,16 +238,16 @@ class MyEnv(gym.Env):
     def is_goal(self):
         return self.dis < self.robot_radius
 
-    def observe(self):
+    def observe(self,pose,target):
         observation = np.zeros(self.observation_space.shape[0])
         #LIDAR
         for i in range(self.NUM_LIDAR):
             angle = i * self.ANGLE_INCREMENT - self.MAX_ANGLE
-            observation[i] = self.raycasting(self.pose,angle)
+            observation[i] = self.raycasting(pose,angle)
         #pose
-        observation[self.NUM_LIDAR] = np.sqrt((self.target[0]-self.pose[0])**2 +(self.target[1]-self.pose[1])**2)
-        theta = np.arctan2((self.target[1]-self.pose[1]),(self.target[0]-self.pose[0]))
-        theta = angle_diff(theta,self.pose[2])
+        observation[self.NUM_LIDAR] = np.sqrt((target[0]-pose[0])**2 +(target[1]-pose[1])**2)
+        theta = np.arctan2((target[1]-pose[1]),(self.target[0]-pose[0]))
+        theta = angle_diff(theta,pose[2])
         observation[self.NUM_LIDAR+1] = np.sin(theta)
         observation[self.NUM_LIDAR+2] = np.cos(theta)
         return observation
