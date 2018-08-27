@@ -17,6 +17,12 @@ def make_rectangle(MAP,l,r,t,b):
         for j in range(t-1,b):
             MAP[i][j] = 1
 
+def remove_circle(MAP,cx,cy,r):
+    for i in range(cx-r-1,cx+r):
+        for j in range(cy-r-1,cy+r):
+            if np.sqrt((i-cx)**2+(j-cy)**2) < r:
+                MAP[i][j] = 0
+
 def reset_map(size):
     MAP = np.zeros((size,size))
     for i in range(0,size-1):
@@ -94,18 +100,19 @@ class MyEnv(gym.Env):
 
     def reset(self):
         self.pose = np.array([np.random.rand()*0.40+0.80, 0.20,np.random.rand()*0.2*np.pi+0.4*np.pi])
-        self.target = np.array([np.random.rand()*0.40+0.80, 1.8,-0.5*np.pi])
+        self.target = np.array([np.random.rand()*0.40+0.80, 1.8,0.0])
 
-        self.ob_pose = self.target
-        self.ob_target = self.pose        
+        self.ob_pose = np.array([np.random.rand()*0.40+0.80, 1.8,-0.5*np.pi])
+        self.ob_target = np.array([np.random.rand()*0.40+0.80, 0.20,np.random.rand()*0.2*np.pi+0.4*np.pi])
         
         self.MAP = reset_map(self.MAP_SIZE) 
         
         self.dis = np.sqrt((self.target[0]-self.pose[0])**2 + (self.target[1]-self.pose[1])**2)
         self.pre_dis = self.dis
-        self.observation = self.observe(self.pose,self.target)
 
         self.ob_observation = self.observe(self.ob_pose, self.ob_target)
+        make_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
+        self.observation = self.observe(self.pose,self.target)
         self.ob_action = np.array([0.0,0.0])
         self.done = False
         return self.observation
@@ -118,16 +125,18 @@ class MyEnv(gym.Env):
         self.pose[2] %= 2.0 * np.pi
         #self.pose[2] = angle_nomalize(self.pose[2])
         
+        remove_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
+        
         self.ob_action = self.ob.dwa_control(self.ob_action,self.ob_observation)
-        print(self.ob_action)
         #ob pose update
         self.ob_pose[0] = self.ob_pose[0] + self.ob_action[0]*np.cos(self.ob_pose[2])*self.DT
         self.ob_pose[1] = self.ob_pose[1] + self.ob_action[0]*np.sin(self.ob_pose[2])*self.DT
         self.ob_pose[2] = self.ob_pose[2] + self.ob_action[1]*self.DT
         self.ob_pose[2] %= 2.0 * np.pi
-                
-        self.observation = self.observe(self.pose,self.target)
+        
         self.ob_observation = self.observe(self.ob_pose, self.ob_target)
+        make_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
+        self.observation = self.observe(self.pose,self.target)
         reward = self.get_reward()
         self.done = self.is_done()
         return self.observation, reward, self.done, {}
@@ -165,19 +174,25 @@ class MyEnv(gym.Env):
             target = rendering.make_circle(self.robot_radius*0.3*scale)
             self.target_trans = rendering.Transform()
             target.add_attr(self.target_trans)
-            target.set_color(1.0,0.0,0.0)
+            target.set_color(0.0,0.0,1.0)
             self.viewer.add_geom(target)
             #dynamic obstract
             ob = rendering.make_circle(self.robot_radius*scale)
             self.ob_trans = rendering.Transform()
             ob.add_attr(self.ob_trans)
-            ob.set_color(0.0,1.0,1.0)
+            ob.set_color(1.0,0.0,0.0)
             self.viewer.add_geom(ob)
             ob_orientation = rendering.make_capsule(self.robot_radius*scale,1.0)
             self.ob_orientation_trans = rendering.Transform()
             ob_orientation.set_color(0.0,1.0,0.0)
             ob_orientation.add_attr(self.ob_orientation_trans)
             self.viewer.add_geom(ob_orientation)
+            #ob target
+            ob_target = rendering.make_circle(self.robot_radius*0.3*scale)
+            self.ob_target_trans = rendering.Transform()
+            ob_target.add_attr(self.ob_target_trans)
+            ob_target.set_color(1.0,0.0,0.0)
+            self.viewer.add_geom(ob_target)
 
         robot_x = (margin + self.pose[0]) * scale
         robot_y = (margin + self.pose[1]) * scale
@@ -189,12 +204,14 @@ class MyEnv(gym.Env):
         self.robot_trans.set_translation(robot_x, robot_y) 
         self.orientation_trans.set_translation(robot_x,robot_y)
         self.orientation_trans.set_rotation(robot_orientation)
+
+        self.target_trans.set_translation((self.target[0]+margin)*scale,(self.target[1]+margin)*scale)
+        self.ob_target_trans.set_translation((self.ob_target[0]+margin)*scale,(self.ob_target[1]+margin)*scale)
         
         self.ob_trans.set_translation(ob_x, ob_y) 
         self.ob_orientation_trans.set_translation(ob_x,ob_y)
         self.ob_orientation_trans.set_rotation(ob_orientation)
         
-        self.target_trans.set_translation((self.target[0]+margin)*scale,(self.target[1]+margin)*scale)
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
 
     def close(self):

@@ -8,7 +8,7 @@ class Expert():
     # simulation parameters
     def __init__(self):
         # robot parameter
-        self.max_speed = 1.0#env.max_linear_velocity  # [m/s]
+        self.max_speed = 2.0#env.max_linear_velocity  # [m/s]
         self.min_speed = 0.0#env.min_linear_velocity  # [m/s]
         self.max_yawrate = 1.0#env.max_angular_velocity  # [rad/s]
         self.min_yawrate = -1.0#env.min_angular_velocity  # [rad/s]
