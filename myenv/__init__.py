@@ -14,3 +14,8 @@ register(
         id='myenv-v2',
         entry_point='myenv.env_ex:MyEnv'
 )
+
+register(
+        id='myenv-v3',
+        entry_point='myenv.env_sfm:MyEnv'
+)
