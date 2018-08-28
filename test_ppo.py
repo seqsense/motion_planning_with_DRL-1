@@ -8,13 +8,13 @@ MAX_EP_STEP = 1000
 MAX_EP = 10
 GLOBAL_RUNNING_R = []
 GLOBAL_EP = 0
-NN_MODEL = './models/ppo_model_ep_56500.ckpt'
+NN_MODEL = './models/ppo_model_ep_40700.ckpt'
 env = gym.make(GAME)
 
 NUM_STATES = env.observation_space.shape[0]
 NUM_ACTIONS = env.action_space.shape[0]
 A_BOUNDS = [env.action_space.low, env.action_space.high]
-NUM_HIDDEN = [400,200,200]
+NUM_HIDDEN = [512,512,512]
 EPSILON = 0.2
 
 def main():
