@@ -21,7 +21,7 @@ NONE_STATE = np.zeros(NUM_STATES)
 
 # -- constants of Brain
 MIN_BATCH = 512
-BUFFER_SIZE = MIN_BATCH * 4
+BUFFER_SIZE = MIN_BATCH * 10
 MAX_STEPS = 1000
 EPOCH = 3
 EPSILON = 0.2 # loss_CPIをCLIPする範囲を決めます
@@ -30,11 +30,12 @@ LOSS_ENTROPY = 1e-3  # entropy coefficient
 LEARNING_RATE = 1e-3
 
 # -- params of Advantage-ベルマン方程式
-GAMMA = 0.995
+GAMMA = 0.99
 N_STEP_RETURN = 5
 GAMMA_N = GAMMA ** (N_STEP_RETURN)
 LAMBDA = 0.95
-NUM_HIDDENS = [256, 256, 256]
+NUM_HIDDENS = [512, 512, 512]
+#NUM_HIDDENS = [256, 256, 256]
 
 #TIME_HORIZON = 32
 N_WORKERS = 16   # スレッドの数
@@ -45,14 +46,14 @@ EPS_START = 1
 EPS_END = 0.01
 EPS_STEPS = 500*N_WORKERS*MAX_STEPS
 
-TARGET_SCORE = 8
-GLOBAL_EP = 56500
+TARGET_SCORE = 5
+GLOBAL_EP = 40800
 MODEL_SAVE_INTERVAL = 100
 LOG_DIR = './log'
 MODEL_DIR = './models'
 SUMMARY_DIR = './results'
 #NN_MODEL = None
-NN_MODEL = './models/ppo_model_ep_56500.ckpt'
+NN_MODEL = './models/ppo_model_ep_40800.ckpt'
 
 def build_summaries():
     reward = tf.Variable(0.)
