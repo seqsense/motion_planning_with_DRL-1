@@ -4,7 +4,7 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
-from sfm import SocialForceModel
+from sfm2 import SocialForceModel
 
 def make_circle(MAP,cx,cy,r):
     for i in range(cx-r-1,cx+r):
@@ -59,9 +59,8 @@ class MyEnv(gym.Env):
         self.DT = 0.1 #seconds between state updates
 
         self.robot_radius = 0.2
-
         #dynamic obstract
-        self.ob = SocialForceModel(self.robot_radius)
+        self.obs = [SocialForceModel(self.robot_radius),SocialForceModel(self.robot_radius),SocialForceModel(self.robot_radius)]
 
         #action
         self.max_linear_velocity = 1.0
@@ -99,29 +98,33 @@ class MyEnv(gym.Env):
         self.reset()
 
     def reset(self):
-        self.pose = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.1,0.5*np.pi])
-        self.target = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.9,0.0])
+        self.pose = np.array([self.WORLD_SIZE*0.4, self.WORLD_SIZE*0.1,0.5*np.pi])
+        self.target = np.array([self.WORLD_SIZE*0.4, self.WORLD_SIZE*0.9,0.0])
         #self.pose = np.array([np.random.rand()*0.40+0.80, 0.20,np.random.rand()*0.2*np.pi+0.4*np.pi])
         #self.target = np.array([np.random.rand()*0.40+0.80, 1.8,0.0])
-        if np.random.randint(2):
-            self.ob_pose = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.9])
-            self.ob_target = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.1])
-        else:
-            self.ob_pose = np.array([self.WORLD_SIZE*0.1, self.WORLD_SIZE*0.5])
-            self.ob_target = np.array([self.WORLD_SIZE*0.9, self.WORLD_SIZE*0.5])
+        self.ob_pose = np.array([[self.WORLD_SIZE*0.6, self.WORLD_SIZE*0.1],
+                                [self.WORLD_SIZE*0.4, self.WORLD_SIZE*0.9],
+                                [self.WORLD_SIZE*0.6, self.WORLD_SIZE*0.9]])
+        self.ob_target = np.array([[self.WORLD_SIZE*0.6, self.WORLD_SIZE*0.9],
+                                [self.WORLD_SIZE*0.4, self.WORLD_SIZE*0.1],
+                                [self.WORLD_SIZE*0.6, self.WORLD_SIZE*0.1]])
 
         #self.ob_pose = np.array([np.random.rand()*0.40+0.80, 1.8,-0.5*np.pi])
         #self.ob_target = np.array([np.random.rand()*0.40+0.80, 0.20,np.random.rand()*0.2*np.pi+0.4*np.pi])
-        self.ob.reset(self.ob_pose,self.ob_target)
-
+        i = 0
+        for ob in self.obs:
+            ob.reset(self.ob_pose[i],self.ob_target[i])
+            i+=1
         self.MAP = reset_map(self.MAP_SIZE) 
         
         self.dis = np.sqrt((self.target[0]-self.pose[0])**2 + (self.target[1]-self.pose[1])**2)
         self.pre_dis = self.dis
+        
+        for i in range(3):
+            make_circle(self.MAP,int(self.ob_pose[i][0]/self.MAP_RESOLUTION),int(self.ob_pose[i][1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
 
-        make_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
         self.observation = self.observe(self.pose,self.target)
-        self.ob_action = np.array([0.0,0.0])
+        self.ob_action = np.array([[0.0,0.0],[0.0,0.0],[0.0,0.0]])
         self.done = False
         return self.observation
 
@@ -132,15 +135,19 @@ class MyEnv(gym.Env):
         self.pose[2] = self.pose[2] + action[1]*self.DT
         self.pose[2] %= 2.0 * np.pi
         #self.pose[2] = angle_nomalize(self.pose[2])
-        
-        remove_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
-        
-        self.ob_action = self.ob.get_action(self.ob_pose,self.pose)
-        #ob pose update
-        self.ob_pose[0] = self.ob_pose[0] + self.ob_action[0]*self.DT
-        self.ob_pose[1] = self.ob_pose[1] + self.ob_action[1]*self.DT
-        
-        make_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
+        i = 0
+        for ob in self.obs:
+            o = []
+            for j in range(3):
+                if not j is i:
+                    o.append(self.ob_pose[j])
+            remove_circle(self.MAP,int(self.ob_pose[i][0]/self.MAP_RESOLUTION),int(self.ob_pose[i][1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
+            self.ob_action[i] = ob.get_action(self.ob_pose[i],self.pose,o[0],o[1])
+            #ob pose update
+            self.ob_pose[i][0] = self.ob_pose[i][0] + self.ob_action[i][0]*self.DT
+            self.ob_pose[i][1] = self.ob_pose[i][1] + self.ob_action[i][1]*self.DT
+            make_circle(self.MAP,int(self.ob_pose[i][0]/self.MAP_RESOLUTION),int(self.ob_pose[i][1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
+            i+=1
         self.observation = self.observe(self.pose,self.target)
         reward = self.get_reward()
         self.done = self.is_done()
@@ -182,32 +189,64 @@ class MyEnv(gym.Env):
             target.set_color(0.0,0.0,1.0)
             self.viewer.add_geom(target)
             #dynamic obstract
-            obj = rendering.make_circle(self.robot_radius*scale)
-            self.ob_trans = rendering.Transform()
-            obj.add_attr(self.ob_trans)
-            obj.set_color(1.0,0.0,0.0)
-            self.viewer.add_geom(obj)
+            ob1 = rendering.make_circle(self.robot_radius*scale)
+            self.ob_trans1 = rendering.Transform()
+            ob1.add_attr(self.ob_trans1)
+            ob1.set_color(1.0,0.0,0.0)
+            self.viewer.add_geom(ob1)
             #ob target
-            ob_target = rendering.make_circle(self.robot_radius*0.3*scale)
-            self.ob_target_trans = rendering.Transform()
-            ob_target.add_attr(self.ob_target_trans)
-            ob_target.set_color(1.0,0.0,0.0)
-            self.viewer.add_geom(ob_target)
+            ob_target1 = rendering.make_circle(self.robot_radius*0.3*scale)
+            self.ob_target_trans1 = rendering.Transform()
+            ob_target1.add_attr(self.ob_target_trans1)
+            ob_target1.set_color(1.0,0.0,0.0)
+            self.viewer.add_geom(ob_target1)
+            #dynamic obstract
+            ob2 = rendering.make_circle(self.robot_radius*scale)
+            self.ob_trans2 = rendering.Transform()
+            ob2.add_attr(self.ob_trans2)
+            ob2.set_color(1.0,0.0,0.0)
+            self.viewer.add_geom(ob2)
+            #ob target
+            ob_target2 = rendering.make_circle(self.robot_radius*0.3*scale)
+            self.ob_target_trans2 = rendering.Transform()
+            ob_target2.add_attr(self.ob_target_trans2)
+            ob_target2.set_color(1.0,0.0,0.0)
+            self.viewer.add_geom(ob_target2)
+            #dynamic obstract
+            ob3 = rendering.make_circle(self.robot_radius*scale)
+            self.ob_trans3 = rendering.Transform()
+            ob3.add_attr(self.ob_trans3)
+            ob3.set_color(1.0,0.0,0.0)
+            self.viewer.add_geom(ob3)
+            #ob target
+            ob_target3 = rendering.make_circle(self.robot_radius*0.3*scale)
+            self.ob_target_trans3 = rendering.Transform()
+            ob_target3.add_attr(self.ob_target_trans3)
+            ob_target3.set_color(1.0,0.0,0.0)
+            self.viewer.add_geom(ob_target3)
 
         robot_x = (margin + self.pose[0]) * scale
         robot_y = (margin + self.pose[1]) * scale
         robot_orientation = self.pose[2]
-        ob_x = (margin + self.ob_pose[0]) * scale
-        ob_y = (margin + self.ob_pose[1]) * scale
+        ob1_x = (margin + self.ob_pose[0][0]) * scale
+        ob1_y = (margin + self.ob_pose[0][1]) * scale
+        self.ob_trans1.set_translation(ob1_x, ob1_y) 
+        ob2_x = (margin + self.ob_pose[1][0]) * scale
+        ob2_y = (margin + self.ob_pose[1][1]) * scale
+        self.ob_trans2.set_translation(ob2_x, ob2_y) 
+        ob3_x = (margin + self.ob_pose[2][0]) * scale
+        ob3_y = (margin + self.ob_pose[2][1]) * scale
+        self.ob_trans3.set_translation(ob3_x, ob3_y) 
         
         self.robot_trans.set_translation(robot_x, robot_y) 
         self.orientation_trans.set_translation(robot_x,robot_y)
         self.orientation_trans.set_rotation(robot_orientation)
 
         self.target_trans.set_translation((self.target[0]+margin)*scale,(self.target[1]+margin)*scale)
-        self.ob_target_trans.set_translation((self.ob_target[0]+margin)*scale,(self.ob_target[1]+margin)*scale)
+        self.ob_target_trans1.set_translation((self.ob_target[0][0]+margin)*scale,(self.ob_target[0][1]+margin)*scale)
+        self.ob_target_trans2.set_translation((self.ob_target[1][0]+margin)*scale,(self.ob_target[1][1]+margin)*scale)
+        self.ob_target_trans3.set_translation((self.ob_target[2][0]+margin)*scale,(self.ob_target[2][1]+margin)*scale)
         
-        self.ob_trans.set_translation(ob_x, ob_y) 
         
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
 

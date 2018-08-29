@@ -5,12 +5,11 @@ class SocialForceModel(object):
     # simulation parameters
     def __init__(self,radius):
         # robot parameter
-        self.avg_speed = 3.0  # [m/s]
+        self.avg_speed = 1.5  # [m/s]
         self.alpha = 1.0
-        self.beta = 1.3
+        self.beta = 1.0
         self.dt = 0.01
-        self.B = 100.0
-        self.C = 0.01
+        self.B = 5.0
         self.radius = radius
 
         self.pose = np.array([0.,0.])
@@ -28,17 +27,17 @@ class SocialForceModel(object):
     def abs_vector(self,a):
         return np.sqrt(a[0]**2+a[1]**2)
 
-    def get_action(self,pose,ob):
+    def get_action(self,pose,ob1,ob2,ob3):
         if self.calc_dis(pose,self.target) < self.radius:
             e = 0.0
             return np.zeros(2)
         else:
             e = (self.target-pose)/self.calc_dis(pose,self.target)
         v_a = (e*self.avg_speed)# - self.action
-        n = -np.array([ob[0]-pose[0],ob[1]-pose[1]])
+        n = -np.array([ob1[0]-pose[0],ob1[1]-pose[1]])
         n = n / self.abs_vector(n)
-        v_b = (np.exp(self.radius*2-self.calc_dis(pose,ob)/self.B)) * n 
-        print(v_a, v_b)
+        v_b = (np.exp(self.radius*2-self.calc_dis(pose,ob1)/self.B)) * n 
+        #print(v_a, v_b)
         self.action = self.alpha * v_a + self.beta * v_b
         
         return self.action

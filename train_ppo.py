@@ -12,7 +12,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'    # TensorFlow高速化用のワーニングを表示させない
 
 # -- constants of Game
-ENV = 'myenv-v0'
+ENV = 'myenv-v3'
 env = gym.make(ENV)
 NUM_STATES = env.observation_space.shape[0]   
 NUM_ACTIONS = env.action_space.shape[0]
@@ -34,8 +34,8 @@ GAMMA = 0.99
 N_STEP_RETURN = 5
 GAMMA_N = GAMMA ** (N_STEP_RETURN)
 LAMBDA = 0.95
-NUM_HIDDENS = [512, 512, 512]
-#NUM_HIDDENS = [256, 256, 256]
+#NUM_HIDDENS = [512, 512, 512]
+NUM_HIDDENS = [256, 256, 256]
 
 #TIME_HORIZON = 32
 N_WORKERS = 16   # スレッドの数
@@ -47,13 +47,13 @@ EPS_END = 0.01
 EPS_STEPS = 500*N_WORKERS*MAX_STEPS
 
 TARGET_SCORE = 5
-GLOBAL_EP = 40800
+GLOBAL_EP = 0
 MODEL_SAVE_INTERVAL = 100
 LOG_DIR = './log'
 MODEL_DIR = './models'
 SUMMARY_DIR = './results'
 #NN_MODEL = None
-NN_MODEL = './models/ppo_model_ep_40800.ckpt'
+NN_MODEL = './models/ppo_model_static.ckpt'
 
 def build_summaries():
     reward = tf.Variable(0.)
