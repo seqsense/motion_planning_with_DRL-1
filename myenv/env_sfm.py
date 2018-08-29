@@ -56,7 +56,7 @@ class MyEnv(gym.Env):
         self.MAP_RESOLUTION = 0.01
         self.MAP = reset_map(self.MAP_SIZE)
         self.WORLD_SIZE = self.MAP_SIZE * self.MAP_RESOLUTION
-        self.DT = 0.01 #seconds between state updates
+        self.DT = 0.1 #seconds between state updates
 
         self.robot_radius = 0.2
 
@@ -103,7 +103,7 @@ class MyEnv(gym.Env):
         self.target = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.9,0.0])
         #self.pose = np.array([np.random.rand()*0.40+0.80, 0.20,np.random.rand()*0.2*np.pi+0.4*np.pi])
         #self.target = np.array([np.random.rand()*0.40+0.80, 1.8,0.0])
-        if np.random.randint(2) is 1:
+        if np.random.randint(2):
             self.ob_pose = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.9])
             self.ob_target = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.1])
         else:
