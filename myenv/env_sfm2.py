@@ -137,8 +137,12 @@ class MyEnv(gym.Env):
         #self.pose[2] = angle_nomalize(self.pose[2])
         i = 0
         for ob in self.obs:
+            o = []
+            for j in range(3):
+                if not j is i:
+                    o.append(self.ob_pose[j])
             remove_circle(self.MAP,int(self.ob_pose[i][0]/self.MAP_RESOLUTION),int(self.ob_pose[i][1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
-            self.ob_action[i] = ob.get_action(self.ob_pose[i],self.pose)
+            self.ob_action[i] = ob.get_action(self.ob_pose[i],self.pose,o[0],o[1])
             #ob pose update
             self.ob_pose[i][0] = self.ob_pose[i][0] + self.ob_action[i][0]*self.DT
             self.ob_pose[i][1] = self.ob_pose[i][1] + self.ob_action[i][1]*self.DT
