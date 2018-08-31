@@ -46,14 +46,14 @@ EPS_START = 1
 EPS_END = 0.01
 EPS_STEPS = 500*N_WORKERS*MAX_STEPS
 
-TARGET_SCORE = 5
+TARGET_SCORE = 6
 GLOBAL_EP = 0
 MODEL_SAVE_INTERVAL = 100
 LOG_DIR = './log'
 MODEL_DIR = './models'
 SUMMARY_DIR = './results'
-#NN_MODEL = None
-NN_MODEL = './models/ppo_model_static.ckpt'
+NN_MODEL = None
+#NN_MODEL = './models/ppo_model_static.ckpt'
 
 def build_summaries():
     reward = tf.Variable(0.)
