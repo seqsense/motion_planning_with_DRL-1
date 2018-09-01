@@ -107,8 +107,8 @@ class MyEnv(gym.Env):
             self.ob_pose = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.9])
             self.ob_target = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.1])
         else:
-            self.ob_pose = np.array([self.WORLD_SIZE*0.1, self.WORLD_SIZE*0.5])
-            self.ob_target = np.array([self.WORLD_SIZE*0.9, self.WORLD_SIZE*0.5])
+            self.ob_pose = np.array([self.WORLD_SIZE*0.9, self.WORLD_SIZE*0.5])
+            self.ob_target = np.array([self.WORLD_SIZE*0.0, self.WORLD_SIZE*0.5])
 
         #self.ob_pose = np.array([np.random.rand()*0.40+0.80, 1.8,-0.5*np.pi])
         #self.ob_target = np.array([np.random.rand()*0.40+0.80, 0.20,np.random.rand()*0.2*np.pi+0.4*np.pi])
@@ -119,7 +119,7 @@ class MyEnv(gym.Env):
         self.dis = np.sqrt((self.target[0]-self.pose[0])**2 + (self.target[1]-self.pose[1])**2)
         self.pre_dis = self.dis
 
-        make_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
+        #make_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
         self.observation = self.observe(self.pose,self.target)
         self.ob_action = np.array([0.0,0.0])
         self.done = False
@@ -133,14 +133,14 @@ class MyEnv(gym.Env):
         self.pose[2] %= 2.0 * np.pi
         #self.pose[2] = angle_nomalize(self.pose[2])
         
-        remove_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
+        #remove_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
         
         self.ob_action = self.ob.get_action(self.ob_pose,self.pose)
         #ob pose update
         self.ob_pose[0] = self.ob_pose[0] + self.ob_action[0]*self.DT
         self.ob_pose[1] = self.ob_pose[1] + self.ob_action[1]*self.DT
         
-        make_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
+        #make_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
         self.observation = self.observe(self.pose,self.target)
         reward = self.get_reward()
         self.done = self.is_done()

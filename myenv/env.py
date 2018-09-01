@@ -82,7 +82,7 @@ class MyEnv(gym.Env):
         self.max_range = 10.0
         self.min_distance = 0.0
         self.max_distance = np.sqrt(2) * self.WORLD_SIZE
-        self.NUM_LIDAR = 10
+        self.NUM_LIDAR = 72
         self.NUM_TARGET = 3 
         self.MAX_ANGLE = 0.5*np.pi
         self.ANGLE_INCREMENT = self.MAX_ANGLE * 2.0 / self.NUM_LIDAR

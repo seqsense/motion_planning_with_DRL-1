@@ -82,7 +82,7 @@ class MyEnv(gym.Env):
         self.max_range = 10.0
         self.min_distance = 0.0
         self.max_distance = np.sqrt(2) * self.WORLD_SIZE
-        self.NUM_LIDAR = 720 
+        self.NUM_LIDAR = 72 
         self.NUM_TARGET = 3 
         self.MAX_ANGLE = 0.5*np.pi
         self.ANGLE_INCREMENT = self.MAX_ANGLE * 2.0 / self.NUM_LIDAR
@@ -117,9 +117,9 @@ class MyEnv(gym.Env):
         #self.MAP, self.l1, self.l2 = reset_map(self.MAP_SIZE) 
         self.dis = np.sqrt((self.target[0]-self.pose[0])**2 + (self.target[1]-self.pose[1])**2)
         self.pre_dis = self.dis
-        self.observation = self.observe()
+        self.lidar, self.goal = self.observe()
         self.done = False
-        return self.observation
+        return self.lidar, self.goal
 
     def step(self, action):
         #pose update
@@ -129,10 +129,10 @@ class MyEnv(gym.Env):
         self.pose[2] %= 2.0 * np.pi
         #self.pose[2] = angle_nomalize(self.pose[2])
                 
-        self.observation = self.observe()
+        self.lidar, self.goal = self.observe()
         reward = self.get_reward()
         self.done = self.is_done()
-        return self.observation, reward, self.done, {}
+        return self.lidar, self.goal, reward, self.done, {}
 
     def render(self, mode='human', close=False):
         screen_width = 600
@@ -165,7 +165,7 @@ class MyEnv(gym.Env):
             self.viewer.add_geom(robot_orientation)
             #lidar
             #for i in range(self.NUM_LIDAR):
-            #    lidar = rendering.make_capsule(scale*self.observation[i],1.0)
+            #    lidar = rendering.make_capsule(scale*self.lidar[i],1.0)
             #    lidar_trans = rendering.Transform()
             #    robot_x = (margin + self.pose[0]) * scale
             #    robot_y = (margin + self.pose[1]) * scale
@@ -284,18 +284,19 @@ class MyEnv(gym.Env):
         return self.dis < self.robot_radius
 
     def observe(self):
-        observation = np.zeros(self.observation_space.shape[0])
+        lidar = np.zeros(self.NUM_LIDAR)
+        goal = np.zeros(self.NUM_TARGET)
         #LIDAR
         for i in range(self.NUM_LIDAR):
             angle = i * self.ANGLE_INCREMENT - self.MAX_ANGLE
-            observation[i] = self.raycasting(self.pose,angle)
+            lidar[i] = self.raycasting(self.pose,angle)
         #pose
-        observation[self.NUM_LIDAR] = np.sqrt((self.target[0]-self.pose[0])**2 +(self.target[1]-self.pose[1])**2)
+        goal[0] = np.sqrt((self.target[0]-self.pose[0])**2 +(self.target[1]-self.pose[1])**2)
         theta = np.arctan2((self.target[1]-self.pose[1]),(self.target[0]-self.pose[0]))
         theta = angle_diff(theta,self.pose[2])
-        observation[self.NUM_LIDAR+1] = np.sin(theta)
-        observation[self.NUM_LIDAR+2] = np.cos(theta)
-        return observation
+        goal[1] = np.sin(theta)
+        goal[2] = np.cos(theta)
+        return lidar, goal
 
     def is_done(self):
         return (not self.is_movable(self.pose)) or self.is_collision(self.pose) or self.is_goal()
