@@ -102,9 +102,9 @@ class MyEnv(gym.Env):
         self.target = np.array([self.WORLD_SIZE*0.4, self.WORLD_SIZE*0.9,0.0])
         #self.pose = np.array([np.random.rand()*0.40+0.80, 0.20,np.random.rand()*0.2*np.pi+0.4*np.pi])
         #self.target = np.array([np.random.rand()*0.40+0.80, 1.8,0.0])
-        self.ob_pose = np.array([[self.WORLD_SIZE*0.6, self.WORLD_SIZE*0.1],
-                                [self.WORLD_SIZE*0.4, self.WORLD_SIZE*0.9],
-                                [self.WORLD_SIZE*0.6, self.WORLD_SIZE*0.9]])
+        self.ob_pose = np.array([[np.random.normal(self.WORLD_SIZE*0.6,0.1), np.random.normal(self.WORLD_SIZE*0.1,0.1)],
+                                [np.random.normal(self.WORLD_SIZE*0.4,0.1), np.random.normal(self.WORLD_SIZE*0.9,0.1)],
+                                [np.random.normal(self.WORLD_SIZE*0.6,0.1), np.random.normal(self.WORLD_SIZE*0.9,0.1)]])
         self.ob_target = np.array([[self.WORLD_SIZE*0.6, self.WORLD_SIZE*0.9],
                                 [self.WORLD_SIZE*0.4, self.WORLD_SIZE*0.1],
                                 [self.WORLD_SIZE*0.6, self.WORLD_SIZE*0.1]])
