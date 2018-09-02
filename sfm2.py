@@ -8,6 +8,7 @@ class SocialForceModel(object):
         self.avg_speed = 1.0  # [m/s]
         self.alpha = 1.0
         self.beta = 0.5
+        self.gamma = 2.5
         self.dt = 0.01
         self.B = 5.0
         self.C = 0.3
@@ -36,6 +37,7 @@ class SocialForceModel(object):
         else:
             e = (self.target-pose)/self.calc_dis(pose,self.target)
         v_a = (e*self.avg_speed)# - self.action
+        
         n1 = -np.array([ob1[0]-pose[0],ob1[1]-pose[1]])
         n1 = n1 / self.abs_vector(n1)
         v_b1 = (np.exp(self.radius*2-self.calc_dis(pose,ob1)/self.B)) * n1 
@@ -51,9 +53,14 @@ class SocialForceModel(object):
         v_b3 = (np.exp(self.radius*2-self.calc_dis(pose,ob3)/self.B)) * n3
         if np.dot(e,n3) < self.abs_vector(n3)*np.cos(self.FOV):
             v_b3 *= self.C
-        #print(v_a, v_b)
         v_b = v_b1 + v_b2 + v_b3
-        self.action = self.alpha * v_a + self.beta * v_b
+
+        v_c1 = (np.exp(self.radius-(pose[0]-2.5))/self.B) * np.array([1.,0.])
+        v_c2 = (np.exp(self.radius-pose[1])/self.B) * np.array([0.,1.])
+        v_c3 = (np.exp(self.radius-(7.5-pose[0]))/self.B) * np.array([-1.,0.])
+        v_c4 = (np.exp(self.radius-(10.0-pose[1]))/self.B) * np.array([0.,-1.])
+        v_c = v_c1 + v_c2 + v_c3 + v_c4
+        self.action = self.alpha * v_a + self.beta * v_b + self.gamma * v_c
         
         return self.action
 

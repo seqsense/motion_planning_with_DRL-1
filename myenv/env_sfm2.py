@@ -31,6 +31,8 @@ def reset_map(size):
     for j in range(1,size-2):
         MAP[0][j] = 1
         MAP[size-1][j] = 1
+    make_rectangle(MAP,0,250,0,1000)
+    make_rectangle(MAP,750,1000,0,1000)
     return MAP
 
 def angle_nomalize(z):
@@ -98,16 +100,16 @@ class MyEnv(gym.Env):
         self.reset()
 
     def reset(self):
-        self.pose = np.array([self.WORLD_SIZE*0.4, self.WORLD_SIZE*0.1,0.5*np.pi])
-        self.target = np.array([self.WORLD_SIZE*0.4, self.WORLD_SIZE*0.9,0.0])
+        self.pose = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.1,0.5*np.pi])
+        self.target = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.9,0.0])
         #self.pose = np.array([np.random.rand()*0.40+0.80, 0.20,np.random.rand()*0.2*np.pi+0.4*np.pi])
         #self.target = np.array([np.random.rand()*0.40+0.80, 1.8,0.0])
-        self.ob_pose = np.array([[np.random.normal(self.WORLD_SIZE*0.6,0.1), np.random.normal(self.WORLD_SIZE*0.1,0.1)],
-                                [np.random.normal(self.WORLD_SIZE*0.4,0.1), np.random.normal(self.WORLD_SIZE*0.9,0.1)],
-                                [np.random.normal(self.WORLD_SIZE*0.6,0.1), np.random.normal(self.WORLD_SIZE*0.9,0.1)]])
-        self.ob_target = np.array([[self.WORLD_SIZE*0.6, self.WORLD_SIZE*0.9],
-                                [self.WORLD_SIZE*0.4, self.WORLD_SIZE*0.1],
-                                [self.WORLD_SIZE*0.6, self.WORLD_SIZE*0.1]])
+        self.ob_pose = np.array([[np.random.normal(self.WORLD_SIZE*0.4,0.1), np.random.normal(self.WORLD_SIZE*0.1,0.1)],
+                                [np.random.normal(self.WORLD_SIZE*0.6,0.1), np.random.normal(self.WORLD_SIZE*0.9,0.1)],
+                                [np.random.normal(self.WORLD_SIZE*0.7,0.1), np.random.normal(self.WORLD_SIZE*0.9,0.1)]])
+        self.ob_target = np.array([[self.WORLD_SIZE*0.4, self.WORLD_SIZE*0.9],
+                                [self.WORLD_SIZE*0.6, self.WORLD_SIZE*0.1],
+                                [self.WORLD_SIZE*0.7, self.WORLD_SIZE*0.1]])
 
         #self.ob_pose = np.array([np.random.rand()*0.40+0.80, 1.8,-0.5*np.pi])
         #self.ob_target = np.array([np.random.rand()*0.40+0.80, 0.20,np.random.rand()*0.2*np.pi+0.4*np.pi])
@@ -171,6 +173,21 @@ class MyEnv(gym.Env):
             wall = rendering.PolyLine([(l,b),(l,t),(r,t),(r,b)],True)
             wall.set_color(0.,0.,0.)
             self.viewer.add_geom(wall)
+            #object
+            l = (margin+   0*self.MAP_RESOLUTION) * scale
+            r = (margin+ 250*self.MAP_RESOLUTION) * scale
+            t = (margin+   0*self.MAP_RESOLUTION) * scale
+            b = (margin+1000*self.MAP_RESOLUTION) * scale
+            wall1 = rendering.FilledPolygon([(l,b),(l,t),(r,t),(r,b)])
+            wall1.set_color(0.,0.,0.)
+            self.viewer.add_geom(wall1)
+            l = (margin+ 750*self.MAP_RESOLUTION) * scale
+            r = (margin+1000*self.MAP_RESOLUTION) * scale
+            t = (margin+   0*self.MAP_RESOLUTION) * scale
+            b = (margin+1000*self.MAP_RESOLUTION) * scale
+            wall2 = rendering.FilledPolygon([(l,b),(l,t),(r,t),(r,b)])
+            wall2.set_color(0.,0.,0.)
+            self.viewer.add_geom(wall2)
             #robot
             robot = rendering.make_circle(self.robot_radius*scale)
             self.robot_trans = rendering.Transform()
