@@ -5,10 +5,10 @@ class SocialForceModel(object):
     # simulation parameters
     def __init__(self,radius):
         # robot parameter
-        self.avg_speed = 1.0  # [m/s]
+        self.avg_speed = 0.5  # [m/s]
         self.alpha = 1.0
         self.beta = 0.5
-        self.gamma = 2.5
+        self.gamma = 0.5
         self.dt = 0.01
         self.B = 5.0
         self.C = 0.3
@@ -56,9 +56,9 @@ class SocialForceModel(object):
         v_b = v_b1 + v_b2 + v_b3
 
         v_c1 = (np.exp(self.radius-(pose[0]-2.5))/self.B) * np.array([1.,0.])
-        v_c2 = (np.exp(self.radius-pose[1])/self.B) * np.array([0.,1.])
+        v_c2 = (np.exp(self.radius-pose[1])/self.B) * np.array([0.,0.])
         v_c3 = (np.exp(self.radius-(7.5-pose[0]))/self.B) * np.array([-1.,0.])
-        v_c4 = (np.exp(self.radius-(10.0-pose[1]))/self.B) * np.array([0.,-1.])
+        v_c4 = (np.exp(self.radius-(10.0-pose[1]))/self.B) * np.array([0.,0.])
         v_c = v_c1 + v_c2 + v_c3 + v_c4
         self.action = self.alpha * v_a + self.beta * v_b + self.gamma * v_c
         

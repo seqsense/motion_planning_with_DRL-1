@@ -5,10 +5,9 @@ class SocialForceModel(object):
     # simulation parameters
     def __init__(self,radius):
         # robot parameter
-        self.avg_speed = 1.5  # [m/s]
+        self.avg_speed = 0.7  # [m/s]
         self.alpha = 1.0
-        self.beta = 1.0
-        self.dt = 0.01
+        self.beta = 0.5
         self.B = 5.0
         self.radius = radius
 
