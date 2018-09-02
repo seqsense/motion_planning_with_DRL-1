@@ -62,7 +62,7 @@ class MyEnv(gym.Env):
         self.WORLD_SIZE = self.MAP_SIZE * self.MAP_RESOLUTION
         self.DT = 0.1 #seconds between state updates
 
-        self.robot_radius = 0.20 #[m]
+        self.robot_radius = 0.30 #[m]
 
         #action
         self.max_linear_velocity = 1.0
@@ -82,7 +82,7 @@ class MyEnv(gym.Env):
         self.max_range = 10.0
         self.min_distance = 0.0
         self.max_distance = np.sqrt(2) * self.WORLD_SIZE
-        self.NUM_LIDAR = 72
+        self.NUM_LIDAR = 10
         self.NUM_TARGET = 3 
         self.MAX_ANGLE = 0.5*np.pi
         self.ANGLE_INCREMENT = self.MAX_ANGLE * 2.0 / self.NUM_LIDAR
