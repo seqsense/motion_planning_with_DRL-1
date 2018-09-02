@@ -2,13 +2,13 @@ import tensorflow as tf
 import numpy as np
 import gym
 import myenv
-from train_ppo import PPONet
-GAME = 'myenv-v3'
+from train_conv import PPONet
+GAME = 'myenv-v5'
 MAX_EP_STEP = 1000
 MAX_EP = 10
 GLOBAL_RUNNING_R = []
 GLOBAL_EP = 0
-NN_MODEL = './models/ppo_model_static.ckpt'
+NN_MODEL = './models/ppo_model_ep_81000.ckpt'
 env = gym.make(GAME)
 
 NUM_STATES = env.observation_space.shape[0]
@@ -26,20 +26,19 @@ def main():
         saver.restore(sess, NN_MODEL)
     
         for ep in range(MAX_EP):
-            s = env.reset().reshape(-1)
+            s,g = env.reset()
             ep_r = 0
             for t in range(MAX_EP_STEP):
                 env.render()
 
-                s = np.array([s])
-                a = brain.predict_a(s).reshape(-1)
+                a = brain.predict_a(s,[g]).reshape(-1)
 
-                s_, r, done, info = env.step(a)
+                s_,g_, r, done, info = env.step(a)
                 if t ==  MAX_EP_STEP-1:
                     done = True
                 ep_r += r
-                s = s_.reshape(-1)
-
+                s = s_
+                g = g_
                 if done:
                     break
             print(ep, ep_r, done,t)

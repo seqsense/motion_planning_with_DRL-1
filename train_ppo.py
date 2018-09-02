@@ -12,7 +12,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'    # TensorFlow高速化用のワーニングを表示させない
 
 # -- constants of Game
-ENV = 'myenv-v3'
+ENV = 'myenv-v0'
 env = gym.make(ENV)
 NUM_STATES = env.observation_space.shape[0]   
 NUM_ACTIONS = env.action_space.shape[0]
@@ -296,7 +296,8 @@ class Environment:
         if GLOBAL_EP % MODEL_SAVE_INTERVAL == 0:
             saver.save(SESS,MODEL_DIR + "/ppo_model_ep_" + str(GLOBAL_EP) +".ckpt") 
         # スレッドで平均報酬が一定を越えたら終了
-        if self.total_reward_vec.mean() > TARGET_SCORE:
+        #if self.total_reward_vec.mean() > TARGET_SCORE:
+        if GLOBAL_EP > 60000:
             isLearned = True
             time.sleep(2.0)     # この間に他のlearningスレッドが止まります
 
