@@ -52,8 +52,8 @@ TARGET_SCORE = 5
 GLOBAL_EP = 0
 MODEL_SAVE_INTERVAL = 100
 LOG_DIR = './log'
-MODEL_DIR = './models'
-SUMMARY_DIR = './results'
+MODEL_DIR = './models/conv'
+SUMMARY_DIR = './results/conv'
 NN_MODEL = None
 #NN_MODEL = './models/ppo_model_ep_40800.ckpt'
 
