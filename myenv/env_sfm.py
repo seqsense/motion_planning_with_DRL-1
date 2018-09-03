@@ -102,8 +102,8 @@ class MyEnv(gym.Env):
         if np.random.randint(2):
             self.pose = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.1,0.5*np.pi])
             self.target = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.9,0.0])
-            self.ob_pose = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.9])
-            self.ob_target = np.array([self.WORLD_SIZE*0.5, self.WORLD_SIZE*0.1])
+            self.ob_pose = np.array([self.WORLD_SIZE*0.45, self.WORLD_SIZE*0.9])
+            self.ob_target = np.array([self.WORLD_SIZE*0.45, self.WORLD_SIZE*0.1])
         else:
             self.pose = np.array([self.WORLD_SIZE*0.2, self.WORLD_SIZE*0.2,0.25*np.pi])
             self.target = np.array([self.WORLD_SIZE*0.8, self.WORLD_SIZE*0.8,0.0])
@@ -119,7 +119,7 @@ class MyEnv(gym.Env):
         self.dis = np.sqrt((self.target[0]-self.pose[0])**2 + (self.target[1]-self.pose[1])**2)
         self.pre_dis = self.dis
 
-        #make_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
+        make_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
         self.observation = self.observe(self.pose,self.target)
         self.ob_action = np.array([0.0,0.0])
         self.done = False
@@ -133,14 +133,14 @@ class MyEnv(gym.Env):
         self.pose[2] %= 2.0 * np.pi
         #self.pose[2] = angle_nomalize(self.pose[2])
         
-        #remove_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
+        remove_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
         
         self.ob_action = self.ob.get_action(self.ob_pose,self.pose)
         #ob pose update
         self.ob_pose[0] = self.ob_pose[0] + self.ob_action[0]*self.DT
         self.ob_pose[1] = self.ob_pose[1] + self.ob_action[1]*self.DT
         
-        #make_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
+        make_circle(self.MAP,int(self.ob_pose[0]/self.MAP_RESOLUTION),int(self.ob_pose[1]/self.MAP_RESOLUTION),int(self.robot_radius/self.MAP_RESOLUTION))
         self.observation = self.observe(self.pose,self.target)
         reward = self.get_reward()
         self.done = self.is_done()
@@ -209,6 +209,18 @@ class MyEnv(gym.Env):
         
         self.ob_trans.set_translation(ob_x, ob_y) 
         
+        from gym.envs.classic_control import rendering
+        #lidar
+        for i in range(self.NUM_LIDAR):
+            lidar = rendering.make_capsule(scale*self.observation[i],1.0)
+            lidar_trans = rendering.Transform()
+            lidar_trans.set_translation(robot_x,robot_y)
+            lidar_trans.set_rotation(self.pose[2] + i*self.ANGLE_INCREMENT - self.MAX_ANGLE)
+            lidar.set_color(1.0,0.0,0.0)
+            lidar.add_attr(lidar_trans)
+            self.viewer.add_onetime(lidar)
+        return self.viewer.render(return_rgb_array = mode=='rgb_array')
+
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
 
     def close(self):

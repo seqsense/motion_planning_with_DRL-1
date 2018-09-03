@@ -9,7 +9,9 @@ class SocialForceModel(object):
         self.alpha = 1.0
         self.beta = 0.5
         self.B = 5.0
+        self.C = 0.0
         self.radius = radius
+        self.FOV = np.pi * 0.4
 
         self.pose = np.array([0.,0.])
         self.target = np.array([0.,0.])
@@ -36,6 +38,8 @@ class SocialForceModel(object):
         n = -np.array([ob[0]-pose[0],ob[1]-pose[1]])
         n = n / self.abs_vector(n)
         v_b = (np.exp(self.radius*2-self.calc_dis(pose,ob)/self.B)) * n 
+        if np.dot(e,n) > self.abs_vector(n)*np.cos(self.FOV):
+            v_b *= self.C
         #print(v_a, v_b)
         self.action = self.alpha * v_a + self.beta * v_b
         

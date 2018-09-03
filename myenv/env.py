@@ -239,6 +239,17 @@ class MyEnv(gym.Env):
         #self.ob4_trans.set_translation((margin+self.l1*self.MAP_RESOLUTION)*scale,(margin+80*self.MAP_RESOLUTION)*scale)
         #self.ob5_trans.set_translation((margin+self.l2*self.MAP_RESOLUTION)*scale,(margin+130*self.MAP_RESOLUTION)*scale)
 
+        from gym.envs.classic_control import rendering
+        #lidar
+        for i in range(self.NUM_LIDAR):
+            lidar = rendering.make_capsule(scale*self.observation[i],1.0)
+            lidar_trans = rendering.Transform()
+            lidar_trans.set_translation(robot_x,robot_y)
+            lidar_trans.set_rotation(self.pose[2] + i*self.ANGLE_INCREMENT - self.MAX_ANGLE)
+            lidar.set_color(1.0,0.0,0.0)
+            lidar.add_attr(lidar_trans)
+            self.viewer.add_onetime(lidar)
+
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
 
     def close(self):
