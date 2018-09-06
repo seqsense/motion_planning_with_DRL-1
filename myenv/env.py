@@ -62,7 +62,7 @@ class MyEnv(gym.Env):
         self.WORLD_SIZE = self.MAP_SIZE * self.MAP_RESOLUTION
         self.DT = 0.1 #seconds between state updates
 
-        self.robot_radius = 0.30 #[m]
+        self.robot_radius = 0.20 #[m]
 
         #action
         self.max_linear_velocity = 1.0
