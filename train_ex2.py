@@ -42,7 +42,7 @@ N_WORKERS = 16   # スレッドの数
 #Tmax = 3*N_WORKERS   # 各スレッドの更新ステップ間隔      
 
 # ε-greedyのパラメータ
-EPS_START = 0.1
+EPS_START = 1.0
 EPS_END = 0.01
 EPS_STEPS = 500*N_WORKERS*MAX_STEPS
 
