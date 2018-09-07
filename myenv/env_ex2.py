@@ -195,17 +195,17 @@ class MyEnv(gym.Env):
         self.orientation_trans.set_translation(robot_x,robot_y)
         self.orientation_trans.set_rotation(robot_orientation)
         self.target_trans.set_translation((self.target[0]+margin)*scale,(self.target[1]+margin)*scale)
-        from gym.envs.classic_control import rendering
+        #from gym.envs.classic_control import rendering
         #lidar
-        for i in range(self.NUM_LIDAR):
-            obs = self.observation.T
-            lidar = rendering.make_capsule(scale*obs[i][self.NUM_STATES-1],1.0)
-            lidar_trans = rendering.Transform()
-            lidar_trans.set_translation(robot_x,robot_y)
-            lidar_trans.set_rotation(self.pose[2] + i*self.ANGLE_INCREMENT - self.MAX_ANGLE)
-            lidar.set_color(1.0,0.0,0.0)
-            lidar.add_attr(lidar_trans)
-            self.viewer.add_onetime(lidar)
+        #for i in range(self.NUM_LIDAR):
+         #   obs = self.observation.T
+          #  lidar = rendering.make_capsule(scale*obs[i][self.NUM_STATES-1],1.0)
+           # lidar_trans = rendering.Transform()
+            #lidar_trans.set_translation(robot_x,robot_y)
+            #lidar_trans.set_rotation(self.pose[2] + i*self.ANGLE_INCREMENT - self.MAX_ANGLE)
+            #lidar.set_color(1.0,0.0,0.0)
+            #lidar.add_attr(lidar_trans)
+            #self.viewer.add_onetime(lidar)
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
 
     def close(self):
@@ -266,11 +266,11 @@ class MyEnv(gym.Env):
         observation[self.NUM_LIDAR+1] = np.sin(theta)
         observation[self.NUM_LIDAR+2] = np.cos(theta)
         #observation = np.vstack((np.delete(self.observation,0,1).T,observation))
-        a = np.delete(self.observation,0,1)
+        aii€kb wq€kb€kbjj w = np.delete(self.observation,0,1)
         b = a.T
-        print(np.shape(self.observation),np.shape(b),np.shape(observation))
         c = np.vstack((b,observation))
-        return c #observation
+        print(np.shape(a),np.shape(b),np.shape(c))
+        return c.T #observation
 
     def is_done(self):
         return (not self.is_movable(self.pose)) or self.is_collision(self.pose) or self.is_goal()
