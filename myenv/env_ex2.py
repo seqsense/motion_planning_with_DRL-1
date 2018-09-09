@@ -265,12 +265,8 @@ class MyEnv(gym.Env):
         theta = angle_diff(theta,self.pose[2])
         observation[self.NUM_LIDAR+1] = np.sin(theta)
         observation[self.NUM_LIDAR+2] = np.cos(theta)
-        #observation = np.vstack((np.delete(self.observation,0,1).T,observation))
-        aii€kb wq€kb€kbjj w = np.delete(self.observation,0,1)
-        b = a.T
-        c = np.vstack((b,observation))
-        print(np.shape(a),np.shape(b),np.shape(c))
-        return c.T #observation
+        observation = np.vstack((np.delete(self.observation,0,1).T,observation))
+        return observation.T
 
     def is_done(self):
         return (not self.is_movable(self.pose)) or self.is_collision(self.pose) or self.is_goal()

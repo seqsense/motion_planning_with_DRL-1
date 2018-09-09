@@ -12,7 +12,6 @@ for i_episode in range(100):
         action = env.action_space.sample()
         observation, reward, done, info = env.step(action)
         ep_r += reward
-        print(np.shape(observation))
         if done:
             print("Episode %d  finished after %d timesteps, reward: %f "% (i_episode+1, t+1,ep_r))
             break
