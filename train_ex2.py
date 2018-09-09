@@ -12,12 +12,12 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'    # TensorFlow高速化用のワーニングを表示させない
 
 # -- constants of Game
-ENV = 'myenv-v2'
+ENV = 'myenv-v6'
 env = gym.make(ENV)
 NUM_STATES = env.observation_space.shape[0]   
 NUM_ACTIONS = env.action_space.shape[0]
 A_BOUNDS = [env.action_space.low, env.action_space.high]
-NONE_STATE = np.zeros(NUM_STATES)
+NONE_STATE = np.zeros((NUM_STATES,4))
 
 # -- constants of Brain
 MIN_BATCH = 512
@@ -42,7 +42,7 @@ N_WORKERS = 16   # スレッドの数
 #Tmax = 3*N_WORKERS   # 各スレッドの更新ステップ間隔      
 
 # ε-greedyのパラメータ
-EPS_START = 1.0
+EPS_START = 0.10
 EPS_END = 0.01
 EPS_STEPS = 500*N_WORKERS*MAX_STEPS
 
@@ -56,18 +56,19 @@ NN_MODEL = None
 #NN_MODEL = './models/ppo_model_static.ckpt'
 
 def build_summaries():
-    reward = tf.Variable(0.)
-    tf.summary.scalar("Reward",reward)
-    entropy = tf.Variable(0.)
-    tf.summary.scalar("Entropy",entropy)
-    learning_rate = tf.Variable(0.)
-    tf.summary.scalar("Learning_Rate",learning_rate)
-    policy_loss = tf.Variable(0.)
-    tf.summary.scalar("Policy_Loss",policy_loss)
-    value_loss = tf.Variable(0.)
-    tf.summary.scalar("Value_Loss",value_loss)
-    value_estimate = tf.Variable(0.)
-    tf.summary.scalar("Value_Estimate",value_estimate)
+    with tf.name_scope('summaries'):
+        reward = tf.Variable(0.)
+        tf.summary.scalar("Reward",reward)
+        entropy = tf.Variable(0.)
+        tf.summary.scalar("Entropy",entropy)
+        learning_rate = tf.Variable(0.)
+        tf.summary.scalar("Learning_Rate",learning_rate)
+        policy_loss = tf.Variable(0.)
+        tf.summary.scalar("Policy_Loss",policy_loss)
+        value_loss = tf.Variable(0.)
+        tf.summary.scalar("Value_Loss",value_loss)
+        value_estimate = tf.Variable(0.)
+        tf.summary.scalar("Value_Estimate",value_estimate)
 
     summary_vars = [reward,entropy,learning_rate,policy_loss,value_loss,value_estimate]
     summary_ops = tf.summary.merge_all()
@@ -77,58 +78,71 @@ def build_summaries():
 class PPONet(object):
     def __init__(self,sess):
         self.sess = sess
-        self.global_step = tf.Variable(0, trainable=False)
-        self.learning_rate = tf.train.exponential_decay(LEARNING_RATE, self.global_step, 1000, 0.98, staircase=True)
+        self.global_step = tf.Variable(0, trainable=False, name='global_step')
+        self.learning_rate = tf.train.exponential_decay(LEARNING_RATE, self.global_step, 1000, 0.98, staircase=True, name='learning_rate')
 
-        self.s_t = tf.placeholder(tf.float32, shape=(None, 4,NUM_STATES))
-        self.a_t = tf.placeholder(tf.float32, shape=(None, NUM_ACTIONS))
-        self.r_t = tf.placeholder(tf.float32, shape=(None, 1)) 
+        self.s_t = tf.placeholder(tf.float32, shape=(None, NUM_STATES*4), name='S')
+        self.a_t = tf.placeholder(tf.float32, shape=(None, NUM_ACTIONS), name='A')
+        self.r_t = tf.placeholder(tf.float32, shape=(None, 1), name='R') 
 
         self.alpha, self.beta, self.v, self.params = self._build_net('pi',trainable=True)
         self.old_alpha, self.old_beta, _, old_params = self._build_net('old_pi',trainable =False)
         self.train_queue = [[], [], [], [], []]  # s, a, r, s', s' terminal mask
         self.opt = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
-        self.assign_op = [old_params[i].assign(self.params[i]) for i in range(len(self.params))]
+        with tf.name_scope('assign'):
+            self.assign_op = [old_params[i].assign(self.params[i]) for i in range(len(self.params))]
         self.graph = self.build_graph()
 
     def _build_net(self,name,trainable):
         with tf.variable_scope(name):
-            l1 = tf.layers.dense(self.s_t, NUM_HIDDENS[0],tf.nn.relu,trainable=trainable)
-            l2 = tf.layers.dense(l1, NUM_HIDDENS[1],tf.nn.relu,trainable=trainable)
-            l3 = tf.layers.dense(l2, NUM_HIDDENS[2],tf.nn.relu,trainable=trainable)
-            alpha = tf.layers.dense(l3,NUM_ACTIONS,tf.nn.softplus,trainable=trainable)
-            beta = tf.layers.dense(l3,NUM_ACTIONS,tf.nn.softplus,trainable=trainable)
-            value = tf.layers.dense(l3,1,trainable=trainable)
+            l1 = tf.layers.dense(self.s_t, NUM_HIDDENS[0],tf.nn.relu,trainable=trainable, name='l_1')
+            l2 = tf.layers.dense(l1, NUM_HIDDENS[1],tf.nn.relu,trainable=trainable,name='l_2')
+            l3 = tf.layers.dense(l2, NUM_HIDDENS[2],tf.nn.relu,trainable=trainable, name='l_3')
+            alpha = tf.layers.dense(l3,NUM_ACTIONS,tf.nn.softplus,trainable=trainable, name='alpha')
+            beta = tf.layers.dense(l3,NUM_ACTIONS,tf.nn.softplus,trainable=trainable, name='beta')
+            value = tf.layers.dense(l3,1,trainable=trainable, name='value')
         params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,scope=name)
 
         return alpha, beta, value, params
 
     def build_graph(self):
         #x = tf.clip_by_value((self.a_t - A_BOUNDS[0]) / (-A_BOUNDS[0] + A_BOUNDS[1]), 0 + 1e-8, 1 - 1e-8) 
-        x = (self.a_t - A_BOUNDS[0]) / (-A_BOUNDS[0] + A_BOUNDS[1])
-        beta_dist = tf.contrib.distributions.Beta(self.alpha + 1, self.beta + 1)
-        self.prob = beta_dist.prob( x ) + 1e-8
+        with tf.name_scope('wrap_a_out'):
+            x = (self.a_t - A_BOUNDS[0]) / (-A_BOUNDS[0] + A_BOUNDS[1])
 
-        beta_dist_old = tf.contrib.distributions.Beta(self.old_alpha + 1, self.old_beta + 1)
-        self.prob_old = tf.stop_gradient(beta_dist_old.prob( x ) + 1e-5)
-        self.A = beta_dist.sample(1) * (-A_BOUNDS[0] + A_BOUNDS[1]) + A_BOUNDS[0]
-        # loss関数を定義します
-        self.advantage = self.r_t - self.v
-        #mean, var = tf.nn.moments(self.advantage, axes=[1])
-        #stand_adv = (self.advantage - mean) / (var + 1e-8)
-        r_theta = self.prob / self.prob_old
-        loss_CPI = r_theta * tf.stop_gradient(self.advantage)  # stop_gradientでadvantageは定数として扱います
+        with tf.name_scope('a_prob'):
+            beta_dist = tf.contrib.distributions.Beta(self.alpha + 1, self.beta + 1)
+            self.prob = beta_dist.prob( x ) + 1e-8
 
-        # CLIPした場合を計算して、小さい方を使用します。
-        self.r_clip = tf.clip_by_value(r_theta, 1.0-EPSILON, 1.0+EPSILON)
-        clipped_loss_CPI = self.r_clip * tf.stop_gradient(self.advantage)  # stop_gradientでadvantageは定数として扱います
-        self.loss_CLIP = -tf.reduce_mean(tf.minimum(loss_CPI, clipped_loss_CPI))
+            beta_dist_old = tf.contrib.distributions.Beta(self.old_alpha + 1, self.old_beta + 1)
+            self.prob_old = tf.stop_gradient(beta_dist_old.prob( x ) + 1e-5)
 
-        self.loss_value = LOSS_V * tf.reduce_mean(tf.square(self.advantage))  # minimize value error
-        self.entropy = LOSS_ENTROPY * tf.reduce_mean(beta_dist.entropy())  # maximize entropy (regularization)
-        self.loss_total = self.loss_CLIP + self.loss_value - self.entropy
+        with tf.name_scope('choose_a'):
+            self.A = beta_dist.sample(1) * (-A_BOUNDS[0] + A_BOUNDS[1]) + A_BOUNDS[0]
+        with tf.name_scope('advantage'):
+            # loss関数を定義します
+            self.advantage = self.r_t - self.v
+            #mean, var = tf.nn.moments(self.advantage, axes=[1])
+            #stand_adv = (self.advantage - mean) / (var + 1e-8)
+            self.loss_value = LOSS_V * tf.reduce_mean(tf.square(self.advantage))  # minimize value error
 
-        minimize = self.opt.minimize(self.loss_total, global_step=self.global_step)   # 求めた勾配で重み変数を更新する定義
+        with tf.name_scope('clip_loss'):
+            r_theta = self.prob / self.prob_old
+            loss_CPI = r_theta * tf.stop_gradient(self.advantage)  # stop_gradientでadvantageは定数として扱います
+
+            # CLIPした場合を計算して、小さい方を使用します。
+            self.r_clip = tf.clip_by_value(r_theta, 1.0-EPSILON, 1.0+EPSILON)
+            clipped_loss_CPI = self.r_clip * tf.stop_gradient(self.advantage)  # stop_gradientでadvantageは定数として扱います
+            self.loss_CLIP = -tf.reduce_mean(tf.minimum(loss_CPI, clipped_loss_CPI))
+
+        with tf.name_scope('entropy'):
+            self.entropy = LOSS_ENTROPY * tf.reduce_mean(beta_dist.entropy())  # maximize entropy (regularization)
+
+        with tf.name_scope('loss_total'):    
+            self.loss_total = self.loss_CLIP + self.loss_value - self.entropy
+
+        with tf.name_scope('update'):
+            minimize = self.opt.minimize(self.loss_total, global_step=self.global_step)   # 求めた勾配で重み変数を更新する定義
         return minimize
 
     def update_parameter_server(self):     # 重みを学習・更新します
@@ -144,12 +158,13 @@ class PPONet(object):
             batch = np.random.permutation(Buffer)
             for n in range(n_batches):
                 s, a, r, s_, s_mask = np.array(batch[n * MIN_BATCH: (n + 1) * MIN_BATCH]).T
-                #s = np.vstack(s)
+                s = np.vstack(s)
                 a = np.vstack(a)
                 r = np.vstack(r)
                 s_ = np.vstack(s_)
                 s_mask = np.vstack(s_mask)
-                
+                s = np.reshape(s,(MIN_BATCH,NUM_STATES*4))
+                s_ = np.reshape(s_,(MIN_BATCH,NUM_STATES*4))
                 # 時間割引総報酬vを求めます
                 v = self.sess.run(self.v, feed_dict={self.s_t:s_})
 
@@ -172,7 +187,8 @@ class PPONet(object):
         writer.flush()
 
     def predict_a(self, s):    # 状態sから各action
-        a = self.sess.run(self.A, feed_dict={self.s_t: s})
+        feature = np.reshape(s, (1,NUM_STATES*4))
+        a = self.sess.run(self.A, feed_dict={self.s_t: feature})
         return a
 
     def train_push(self, s, a, r, s_):
@@ -201,7 +217,8 @@ class Agent:
             eps = EPS_START + frames * (EPS_END - EPS_START) / EPS_STEPS  # linearly interpolate
 
         if np.random.rand() < eps:
-            return np.random.uniform(A_BOUNDS[0], A_BOUNDS[1], NUM_ACTIONS)  # ランダムに行動
+            a = np.random.uniform(A_BOUNDS[0], A_BOUNDS[1], NUM_ACTIONS)  # ランダムに行動
+            return a
         else:
             s = np.array([s])
             a = self.brain.predict_a(s).reshape(-1)
@@ -255,31 +272,26 @@ class Environment:
         global isLearned
         global GLOBAL_EP
 
-        s = self.env.reset().reshape(-1)
-        steps = [s,s,s,s]
+        s = self.env.reset()
         R = 0
         step = 0
         while True:
             #if self.name == 'W_0':
             #    self.env.render()
-            a = self.agent.act(steps)
+            a = self.agent.act(s)
             s_, r, done, info = self.env.step(a)
-            s_ = s_.reshape(-1)
-            a = a.reshape(-1)
+            #s_ = s_.reshape(-1)
+            #a = a.reshape(-1)
             #r = r.reshape(-1)
-
             step += 1
             frames += 1     # セッショントータルの行動回数をひとつ増やします
 
             if step > MAX_STEPS or done:  # terminal state
                 s_ = None
-            steps_ = steps
-            steps_.pop(0)
-            steps_.append(s_)
 
             # 報酬と経験を、Brainにプッシュ
-            self.agent.advantage_push_brain(steps, a, r, steps_)
-            steps = steps_
+            self.agent.advantage_push_brain(s, a, r, s_)
+            s = s_
             R += r
             if len(self.agent.brain.train_queue[0]) >= BUFFER_SIZE:
                 if not isLearned:
@@ -325,8 +337,8 @@ if __name__ == "__main__":
     SESS = tf.Session(config = config)
 
     # スレッドを作成
-    #with tf.device("/cpu:0"):
-    with tf.device("/gpu:0"):
+    with tf.device("/cpu:0"):
+    #with tf.device("/gpu:0"):
         brain = PPONet(SESS)
         workers = []
         # 学習するスレッドを用意
