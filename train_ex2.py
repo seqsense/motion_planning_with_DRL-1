@@ -333,12 +333,19 @@ if __name__ == "__main__":
     # global変数の定義 & セッションの開始です
     frames = GLOBAL_EP * MAX_STEPS               # 全スレッドで共有して使用する総episode数
     isLearned = False        # 学習が終了したことを示すフラグ
-    config = tf.ConfigProto(allow_soft_placement = True)
-    SESS = tf.Session(config = config)
-
+    config = tf.ConfigProto(
+            gpu_options=tf.GPUOptions(
+                visible_device_list="1",
+                per_process_gpu_memory_fraction=0.5,
+                allow_growth=True
+            )
+            #allow_soft_placement = True
+        )
+    #SESS = tf.Session(config = config)
+    with tf.Session(config=config) as SESS:
     # スレッドを作成
-    with tf.device("/cpu:0"):
-    #with tf.device("/gpu:0"):
+    #with tf.device("/cpu:0"):
+    #with tf.device("/gpu:1"):
         brain = PPONet(SESS)
         workers = []
         # 学習するスレッドを用意
@@ -349,23 +356,23 @@ if __name__ == "__main__":
     # 学習後にテストで走るスレッドを用意
     #workers.append(Worker_thread(thread_name="test", thread_type="test", brain=brain))
 
-    summary_ops, summary_vars = build_summaries()
-    # TensorFlowでマルチスレッドを実行します
-    COORD = tf.train.Coordinator()                  # TensorFlowでマルチスレッドにするための準備です
-    SESS.run(tf.global_variables_initializer())     # TensorFlowを使う場合、最初に変数初期化をして、実行します
-    writer = tf.summary.FileWriter(SUMMARY_DIR,SESS.graph)
-    saver = tf.train.Saver()
+        summary_ops, summary_vars = build_summaries()
+        # TensorFlowでマルチスレッドを実行します
+        COORD = tf.train.Coordinator()                  # TensorFlowでマルチスレッドにするための準備です
+        SESS.run(tf.global_variables_initializer())     # TensorFlowを使う場合、最初に変数初期化をして、実行します
+        writer = tf.summary.FileWriter(SUMMARY_DIR,SESS.graph)
+        saver = tf.train.Saver()
 
-    nn_model = NN_MODEL
-    if nn_model is not None:
-        saver.restore(SESS,nn_model)
-        print("Model restored!!")
+        nn_model = NN_MODEL
+        if nn_model is not None:
+            saver.restore(SESS,nn_model)
+            print("Model restored!!")
 
-    worker_threads = []
-    for worker in workers:
-        job = lambda: worker.run()      # この辺は、マルチスレッドを走らせる作法だと思って良い
-        t = threading.Thread(target=job)
-        t.start()
-        worker_threads.append(t)
-    COORD.join(worker_threads)
+        worker_threads = []
+        for worker in workers:
+            job = lambda: worker.run()      # この辺は、マルチスレッドを走らせる作法だと思って良い
+            t = threading.Thread(target=job)
+            t.start()
+            worker_threads.append(t)
+        COORD.join(worker_threads)
 
