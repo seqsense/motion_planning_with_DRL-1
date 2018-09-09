@@ -73,7 +73,7 @@ class MyEnv(gym.Env):
         
         #observation
         self.min_range = 0.0
-        self.max_range = 10.0
+        self.max_range = 20.0
         self.min_distance = 0.0
         self.max_distance = np.sqrt(2) * self.WORLD_SIZE
         self.NUM_LIDAR = 36
@@ -82,7 +82,11 @@ class MyEnv(gym.Env):
         self.NUM_STATES = 4
         self.MAX_ANGLE = 0.5*np.pi
         self.ANGLE_INCREMENT = self.MAX_ANGLE * 2.0 / self.NUM_LIDAR
-        self.RANGE_MAX = 10
+        self.RANGE_MAX = self.max_range
+        self.lidar_noise = 0.05
+        self.dis_noise = 0.05
+        self.theta_noise = 0.1
+
         self.observation_low = np.full((self.NUM_LIDAR+self.NUM_TARGET,self.NUM_STATES), self.min_range)
         self.observation_high = np.full((self.NUM_LIDAR+self.NUM_TARGET,self.NUM_STATES), self.max_range)
         for i in range(self.NUM_STATES):
@@ -109,15 +113,26 @@ class MyEnv(gym.Env):
         self.pre_dis = self.dis
         self.observation = np.zeros(self.observation_space.shape)
         self.observation = self.observe()
+        self.pre_action = np.zeros(2)
         self.done = False
         return self.observation
 
     def step(self, action):
         #pose update
+        if self.pre_action[0] - self.max_accel*self.DT > action[0]:
+            action[0] = max([self.pre_action[0] - self.max_accel,self.min_linear_velocity])
+        elif self.pre_action[0] + self.max_accel*self.DT < action[0]:
+            action[0] = min([self.pre_action[0] + self.max_accel,self.max_linear_velocity])
+        if self.pre_action[1] - self.max_dyawrate*self.DT > action[1]:
+            action[1] = max([self.pre_action[1] - self.max_dyawrate,self.min_angular_velocity])
+        elif self.pre_action[1] + self.max_dyawrate*self.DT < action[1]:
+            action[1] = min([self.pre_action[1] + self.max_dyawrate,self.max_angular_velocity])
+        
         self.pose[0] = self.pose[0] + action[0]*np.cos(self.pose[2])*self.DT
         self.pose[1] = self.pose[1] + action[0]*np.sin(self.pose[2])*self.DT
         self.pose[2] = self.pose[2] + action[1]*self.DT
         self.pose[2] %= 2.0 * np.pi
+        self.pre_action = action
         self.observation = self.observe()
         reward = self.get_reward()
         self.done = self.is_done()
@@ -129,8 +144,8 @@ class MyEnv(gym.Env):
         margin = 0.2
         world_width = self.WORLD_SIZE + margin * 2.0
         scale = screen_width / world_width
+        from gym.envs.classic_control import rendering
         if self.viewer is None:
-            from gym.envs.classic_control import rendering
             self.viewer = rendering.Viewer(screen_width,screen_height)
             #wall
             l = margin * scale
@@ -195,17 +210,16 @@ class MyEnv(gym.Env):
         self.orientation_trans.set_translation(robot_x,robot_y)
         self.orientation_trans.set_rotation(robot_orientation)
         self.target_trans.set_translation((self.target[0]+margin)*scale,(self.target[1]+margin)*scale)
-        #from gym.envs.classic_control import rendering
         #lidar
-        #for i in range(self.NUM_LIDAR):
-         #   obs = self.observation.T
-          #  lidar = rendering.make_capsule(scale*obs[i][self.NUM_STATES-1],1.0)
-           # lidar_trans = rendering.Transform()
-            #lidar_trans.set_translation(robot_x,robot_y)
-            #lidar_trans.set_rotation(self.pose[2] + i*self.ANGLE_INCREMENT - self.MAX_ANGLE)
-            #lidar.set_color(1.0,0.0,0.0)
-            #lidar.add_attr(lidar_trans)
-            #self.viewer.add_onetime(lidar)
+        for i in range(self.NUM_LIDAR):
+            obs = self.observation.T
+            lidar = rendering.make_capsule(scale*obs[self.NUM_STATES-1][i],1.0)
+            lidar_trans = rendering.Transform()
+            lidar_trans.set_translation(robot_x,robot_y)
+            lidar_trans.set_rotation(self.pose[2] + i*self.ANGLE_INCREMENT - self.MAX_ANGLE)
+            lidar.set_color(1.0,0.0,0.0)
+            lidar.add_attr(lidar_trans)
+            self.viewer.add_onetime(lidar)
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
 
     def close(self):
@@ -258,11 +272,11 @@ class MyEnv(gym.Env):
             for j in range(i*self.NUM_KERNEL,(i+1)*self.NUM_KERNEL):
                 angle = j * (self.ANGLE_INCREMENT/self.NUM_KERNEL) - self.MAX_ANGLE
                 lidar.append(self.raycasting(self.pose,angle))
-            observation[i] = np.amin(lidar)
+            observation[i] = np.random.normal(np.amin(lidar),self.lidar_noise)
         #pose
-        observation[self.NUM_LIDAR] = np.sqrt((self.target[0]-self.pose[0])**2 +(self.target[1]-self.pose[1])**2)
+        observation[self.NUM_LIDAR] = np.random.normal(np.sqrt((self.target[0]-self.pose[0])**2 +(self.target[1]-self.pose[1])**2),self.dis_noise)
         theta = np.arctan2((self.target[1]-self.pose[1]),(self.target[0]-self.pose[0]))
-        theta = angle_diff(theta,self.pose[2])
+        theta = np.random.normal(angle_diff(theta,self.pose[2]),self.theta_noise)
         observation[self.NUM_LIDAR+1] = np.sin(theta)
         observation[self.NUM_LIDAR+2] = np.cos(theta)
         observation = np.vstack((np.delete(self.observation,0,1).T,observation))

@@ -31,10 +31,10 @@ LEARNING_RATE = 1e-3
 
 # -- params of Advantage-ベルマン方程式
 GAMMA = 0.99
-N_STEP_RETURN = 5
+N_STEP_RETURN = 10
 GAMMA_N = GAMMA ** (N_STEP_RETURN)
 LAMBDA = 0.95
-NUM_HIDDENS = [512, 512, 512]
+NUM_HIDDENS = [512, 256, 128]
 #NUM_HIDDENS = [256, 256, 256]
 
 #TIME_HORIZON = 32
@@ -42,7 +42,7 @@ N_WORKERS = 16   # スレッドの数
 #Tmax = 3*N_WORKERS   # 各スレッドの更新ステップ間隔      
 
 # ε-greedyのパラメータ
-EPS_START = 0.10
+EPS_START = 1.0
 EPS_END = 0.01
 EPS_STEPS = 500*N_WORKERS*MAX_STEPS
 
