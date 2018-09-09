@@ -1,6 +1,6 @@
 import gym
 import myenv
-
+import numpy as np
 env = gym.make('myenv-v6')
 
 for i_episode in range(100):
