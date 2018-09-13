@@ -4,6 +4,7 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
+import csv
 
 def make_circle(MAP,cx,cy,r):
     for i in range(cx-r-1,cx+r):
@@ -266,6 +267,19 @@ class MyEnv(gym.Env):
 
     def is_done(self):
         return (not self.is_movable(self.pose)) or self.is_collision(self.pose) or self.is_goal()
+
+    def raycasting_from_dataset(self,pose):
+        with open('raycasting.csv','r') as f:
+            reader = csv.reader(f)
+            x = pose[0] - pose[0]%0.01
+            y = pose[1] - pose[1]%0.01
+            theta = pose[2] - pose[2]%0.01
+            lidar = np.zeros(self.NUM_LIDAR)
+            for row in reader:
+                if float(row[0]) == x and float(row[1]) == y and float(row[2]) == theta:
+                    for i in range(self.NUM_LIDAR):
+                        lidar[i] = row[i+3]
+                        return lidar
 
     def raycasting(self,pose, angle):
         x0 = int(pose[0]/self.MAP_RESOLUTION)
