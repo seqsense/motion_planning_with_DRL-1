@@ -8,7 +8,7 @@ MAX_EP_STEP = 1000
 MAX_EP = 10
 GLOBAL_RUNNING_R = []
 GLOBAL_EP = 0
-NN_MODEL = './models/ex/ppo_model_ep_44000.ckpt'
+NN_MODEL = './models/ex/ppo_model_ep_44600.ckpt'
 env = gym.make(GAME)
 
 NUM_STATES = env.observation_space.shape[0]

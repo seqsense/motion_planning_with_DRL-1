@@ -116,7 +116,6 @@ class MyEnv(gym.Env):
         self.pose[1] = self.pose[1] + action[0]*np.sin(self.pose[2])*self.DT
         self.pose[2] = self.pose[2] + action[1]*self.DT
         self.pose[2] %= 2.0 * np.pi
-                
         self.observation = self.observe()
         reward = self.get_reward()
         self.done = self.is_done()
@@ -253,7 +252,7 @@ class MyEnv(gym.Env):
         #LIDAR
         for i in range(self.NUM_LIDAR):
             lidar = []
-            for j in range(i*self.NUM_KERNEL,(i+1)*self.NUM_KERNEL):
+            for j in range(i*self.NUM_KERNEL,(i+1)*self.NUM_KERNEL-1):
                 angle = j * (self.ANGLE_INCREMENT/self.NUM_KERNEL) - self.MAX_ANGLE
                 lidar.append(self.raycasting(self.pose,angle))
             observation[i] = np.amin(lidar)

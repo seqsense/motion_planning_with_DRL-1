@@ -9,7 +9,7 @@ import gym, time, threading
 import myenv
 import numpy as np
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'    # TensorFlow高速化用のワーニングを表示させない
+#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'    # TensorFlow高速化用のワーニングを表示させない
 
 # -- constants of Game
 ENV = 'myenv-v2'
@@ -43,17 +43,17 @@ N_WORKERS = 16   # スレッドの数
 
 # ε-greedyのパラメータ
 EPS_START = 1
-EPS_END = 0.001
+EPS_END = 0.01
 EPS_STEPS = 500*N_WORKERS*MAX_STEPS
 
 TARGET_SCORE = 6
-GLOBAL_EP = 44001
-MODEL_SAVE_INTERVAL = 500
+GLOBAL_EP = 44501
+MODEL_SAVE_INTERVAL = 100
 LOG_DIR = './log/ex'
 MODEL_DIR = './models/ex'
 SUMMARY_DIR = './results/ex'
 #NN_MODEL = None
-NN_MODEL = './models/ex/ppo_model_ep_44000.ckpt'
+NN_MODEL = './models/ex/ppo_model_ep_44500.ckpt'
 
 def build_summaries():
     reward = tf.Variable(0.)
@@ -275,13 +275,11 @@ class Environment:
 
             # 報酬と経験を、Brainにプッシュ
             self.agent.advantage_push_brain(s, a, r, s_)
-
             s = s_
             R += r
             if len(self.agent.brain.train_queue[0]) >= BUFFER_SIZE:
                 if not isLearned:
                     self.agent.brain.update_parameter_server()
-
             if step > MAX_STEPS or done:
                 self.total_reward_vec = np.hstack((self.total_reward_vec[1:], R))
                 break
@@ -290,6 +288,7 @@ class Environment:
             self.name,
             "| EP: %d" % GLOBAL_EP,
             "| reword: %f" % R,
+            "| step: %d" % step,
             "| running_reward: %f" % self.total_reward_vec.mean(),
             )
         GLOBAL_EP += 1
@@ -313,44 +312,45 @@ class Worker_thread:
             if isLearned:
                 break
 
-# -- main ここからメイン関数です------------------------------
+# -- main -----------------------------
 if __name__ == "__main__":
-    # global変数の定義 & セッションの開始です
-    frames = GLOBAL_EP * MAX_STEPS               # 全スレッドで共有して使用する総episode数
-    isLearned = False        # 学習が終了したことを示すフラグ
-    config = tf.ConfigProto(allow_soft_placement = True)
-    SESS = tf.Session(config = config)
-
-    # スレッドを作成
+    frames = GLOBAL_EP * MAX_STEPS
+    isLearned = False
+    config = tf.ConfigProto(
+            gpu_options=tf.GPUOptions(
+                visible_device_list="0",
+                per_process_gpu_memory_fraction=0.5,
+                #allow_growth=True
+                )
+            #allow_soft_placement = True
+        )
+    #SESS = tf.Session()#config = config)
+    with tf.Session() as SESS:
     #with tf.device("/cpu:0"):
-    with tf.device("/gpu:0"):
+    #with tf.device("/gpu:0"):
         brain = PPONet(SESS)
         workers = []
-        # 学習するスレッドを用意
         for i in range(N_WORKERS):
             worker_name = 'W_%i' % i 
             workers.append(Worker_thread(thread_name=worker_name, brain=brain))
 
-    # 学習後にテストで走るスレッドを用意
-    #workers.append(Worker_thread(thread_name="test", thread_type="test", brain=brain))
 
-    summary_ops, summary_vars = build_summaries()
-    # TensorFlowでマルチスレッドを実行します
-    COORD = tf.train.Coordinator()                  # TensorFlowでマルチスレッドにするための準備です
-    SESS.run(tf.global_variables_initializer())     # TensorFlowを使う場合、最初に変数初期化をして、実行します
-    writer = tf.summary.FileWriter(SUMMARY_DIR,SESS.graph)
-    saver = tf.train.Saver()
+        summary_ops, summary_vars = build_summaries()
+        COORD = tf.train.Coordinator()
+        SESS.run(tf.global_variables_initializer())
+        writer = tf.summary.FileWriter(SUMMARY_DIR,SESS.graph)
+        saver = tf.train.Saver()
 
-    nn_model = NN_MODEL
-    if nn_model is not None:
-        saver.restore(SESS,nn_model)
-        print("Model restored!!")
+        nn_model = NN_MODEL
+        if nn_model is not None:
+            saver.restore(SESS,nn_model)
+            print("Model restored!!")
 
-    worker_threads = []
-    for worker in workers:
-        job = lambda: worker.run()      # この辺は、マルチスレッドを走らせる作法だと思って良い
-        t = threading.Thread(target=job)
-        t.start()
-        worker_threads.append(t)
-    COORD.join(worker_threads)
+        worker_threads = []
+        for worker in workers:
+            job = lambda: worker.run()
+            t = threading.Thread(target=job)
+            t.start()
+            worker_threads.append(t)
+        COORD.join(worker_threads)
 
