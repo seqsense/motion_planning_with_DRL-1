@@ -222,7 +222,7 @@ class MyEnv(gym.Env):
         elif (not self.is_movable(self.pose)) or self.is_collision(self.pose):
             reward = -5.
         else:
-            reward = (self.pre_dis-self.dis)*0.15
+            reward = (self.pre_dis-self.dis)*0.3
         if abs(self.pre_dis-self.dis) < 1e-6:
             reward -=0.05
         self.pre_dis = self.dis

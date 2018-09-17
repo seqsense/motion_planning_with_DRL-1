@@ -51,7 +51,6 @@ class MyEnv(gym.Env):
     def __init__(self):
         self.MAP_SIZE = 1000
         self.MAP_RESOLUTION = 0.01
-        #self.MAP,self.l1, self.l2 = reset_map(self.MAP_SIZE)
         self.MAP = reset_map(self.MAP_SIZE)
         self.WORLD_SIZE = self.MAP_SIZE * self.MAP_RESOLUTION
         self.DT = 0.1 #seconds between state updates
@@ -284,6 +283,9 @@ class MyEnv(gym.Env):
 
     def is_done(self):
         return (not self.is_movable(self.pose)) or self.is_collision(self.pose) or self.is_goal()
+
+    def precast(self,pose):
+
 
     def raycasting(self,pose, angle):
         x0 = int(pose[0]/self.MAP_RESOLUTION)

@@ -3,12 +3,12 @@ import numpy as np
 import gym
 import myenv
 from train_ex import PPONet
-GAME = 'myenv-v2'
+GAME = 'myenv-v7'
 MAX_EP_STEP = 1000
 MAX_EP = 10
 GLOBAL_RUNNING_R = []
 GLOBAL_EP = 0
-NN_MODEL = './models/ex/ppo_model_ep_44600.ckpt'
+NN_MODEL = '/home/amsl/Desktop/ex/ppo_model_ep_44800.ckpt'
 env = gym.make(GAME)
 
 NUM_STATES = env.observation_space.shape[0]

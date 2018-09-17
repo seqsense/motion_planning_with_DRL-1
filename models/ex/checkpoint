@@ -1,4 +1,2 @@
-model_checkpoint_path: "ppo_model_ep_44800.ckpt"
-all_model_checkpoint_paths: "ppo_model_ep_44600.ckpt"
-all_model_checkpoint_paths: "ppo_model_ep_44700.ckpt"
-all_model_checkpoint_paths: "ppo_model_ep_44800.ckpt"
+model_checkpoint_path: "ppo_model_ep_44900.ckpt"
+all_model_checkpoint_paths: "ppo_model_ep_44900.ckpt"

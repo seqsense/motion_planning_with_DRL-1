@@ -57,8 +57,12 @@ class MyEnv(gym.Env):
     def __init__(self):
         self.MAP_SIZE = 1000
         self.MAP_RESOLUTION = 0.01
-        #self.MAP,self.l1, self.l2 = reset_map(self.MAP_SIZE)
         self.MAP = reset_map(self.MAP_SIZE)
+        self.obs = []
+        for i in range(self.MAP_SIZE):
+            for j in range(self.MAP_SIZE):
+                if self.MAP[i][j] == 1:
+                    self.obs.append(np.array([i*self.MAP_RESOLUTION,j*self.MAP_RESOLUTION]))
         self.WORLD_SIZE = self.MAP_SIZE * self.MAP_RESOLUTION
         self.DT = 0.1 #seconds between state updates
 
@@ -113,8 +117,6 @@ class MyEnv(gym.Env):
             #self.target = np.array([np.random.rand()*0.40+0.80, 1.8,0.0])
             if not self.is_collision(self.target):
                 break
-        self.MAP = reset_map(self.MAP_SIZE) 
-        #self.MAP, self.l1, self.l2 = reset_map(self.MAP_SIZE) 
         self.dis = np.sqrt((self.target[0]-self.pose[0])**2 + (self.target[1]-self.pose[1])**2)
         self.pre_dis = self.dis
         self.observation = self.observe()
@@ -126,8 +128,8 @@ class MyEnv(gym.Env):
         self.pose[0] = self.pose[0] + action[0]*np.cos(self.pose[2])*self.DT
         self.pose[1] = self.pose[1] + action[0]*np.sin(self.pose[2])*self.DT
         self.pose[2] = self.pose[2] + action[1]*self.DT
-        self.pose[2] %= 2.0 * np.pi
-        #self.pose[2] = angle_nomalize(self.pose[2])
+        #self.pose[2] %= 2.0 * np.pi
+        self.pose[2] = angle_nomalize(self.pose[2])
                 
         self.observation = self.observe()
         reward = self.get_reward()
@@ -297,9 +299,13 @@ class MyEnv(gym.Env):
     def observe(self):
         observation = np.zeros(self.observation_space.shape[0])
         #LIDAR
+        #precast = self.precasting(self.pose)
+        #print(np.shape(precast))
         for i in range(self.NUM_LIDAR):
             angle = i * self.ANGLE_INCREMENT - self.MAX_ANGLE
             observation[i] = self.raycasting(self.pose,angle)
+            #observation[i] = np.amin(precast[i])
+        
         #pose
         observation[self.NUM_LIDAR] = np.sqrt((self.target[0]-self.pose[0])**2 +(self.target[1]-self.pose[1])**2)
         theta = np.arctan2((self.target[1]-self.pose[1]),(self.target[0]-self.pose[0]))
@@ -310,6 +316,16 @@ class MyEnv(gym.Env):
 
     def is_done(self):
         return (not self.is_movable(self.pose)) or self.is_collision(self.pose) or self.is_goal()
+
+    def precasting(self,pose):
+        precast = [[] for i in range(self.NUM_LIDAR)]
+        for ob in self.obs:
+            angle = angle_diff(np.arctan2((ob[1]-pose[1]),(ob[0]-pose[0])),pose[2])
+            angle_id = int(np.floor(angle/self.ANGLE_INCREMENT)) + int(self.NUM_LIDAR/2.0)
+            if 0 <= angle_id < 10:
+                dis = np.sqrt((ob[0]-pose[0])**2 + (ob[1]-pose[1])**2)
+                precast[angle_id].append(dis)
+        return precast
 
     def raycasting(self,pose, angle):
         x0 = int(pose[0]/self.MAP_RESOLUTION)

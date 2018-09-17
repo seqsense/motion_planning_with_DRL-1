@@ -20,7 +20,7 @@ A_BOUNDS = [env.action_space.low, env.action_space.high]
 NONE_STATE = np.zeros(NUM_STATES)
 
 # -- constants of Brain
-MIN_BATCH = 512
+MIN_BATCH = 2048
 BUFFER_SIZE = MIN_BATCH * 10
 MAX_STEPS = 1000
 EPOCH = 3
@@ -47,13 +47,13 @@ EPS_END = 0.01
 EPS_STEPS = 500*N_WORKERS*MAX_STEPS
 
 TARGET_SCORE = 6
-GLOBAL_EP = 44501
+GLOBAL_EP = 44801
 MODEL_SAVE_INTERVAL = 100
 LOG_DIR = './log/ex'
 MODEL_DIR = './models/ex'
 SUMMARY_DIR = './results/ex'
 #NN_MODEL = None
-NN_MODEL = './models/ex/ppo_model_ep_44500.ckpt'
+NN_MODEL = '/home/amsl/Desktop/ex/ppo_model_ep_44800.ckpt'
 
 def build_summaries():
     reward = tf.Variable(0.)
