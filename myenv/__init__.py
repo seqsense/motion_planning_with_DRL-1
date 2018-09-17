@@ -34,3 +34,8 @@ register(
         id='myenv-v6',
         entry_point='myenv.env_ex2:MyEnv'
 )
+
+register(
+        id='myenv-v7',
+        entry_point='myenv.env_ex_test:MyEnv'
+)
