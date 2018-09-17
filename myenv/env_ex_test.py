@@ -25,9 +25,9 @@ def reset_map(size):
     for j in range(1,size-2):
         MAP[0][j] = 1
         MAP[size-1][j] = 1
-    make_rectangle(MAP,150,300,150,300)
+    make_rectangle(MAP,150,200,150,900)
     make_rectangle(MAP,400,800,600,700)
-    make_circle(MAP,150,750,100)
+    #make_circle(MAP,150,750,100)
     make_circle(MAP,500,250,50)
     make_circle(MAP,800,350,50)
     return MAP
@@ -100,7 +100,7 @@ class MyEnv(gym.Env):
 
     def reset(self):
         self.pose = np.array([0.7, 1.0, np.pi * 0.5])
-        self.target_pose = np.array([[1.0,3.0,0.0],[2.5,6.0,0.0]])
+        self.target_pose = np.array([[0.7,8.5,0.0],[9.0,8.0,0.0]])
         self.num_goal = 0
         self.target = self.target_pose[self.num_goal]
         self.MAP = reset_map(self.MAP_SIZE) 
@@ -157,9 +157,9 @@ class MyEnv(gym.Env):
             self.viewer.add_geom(target)
             #obstract
             l = (margin+150*self.MAP_RESOLUTION) * scale
-            r = (margin+300*self.MAP_RESOLUTION) * scale
+            r = (margin+200*self.MAP_RESOLUTION) * scale
             t = (margin+150*self.MAP_RESOLUTION) * scale
-            b = (margin+300*self.MAP_RESOLUTION) * scale
+            b = (margin+900*self.MAP_RESOLUTION) * scale
             ob1 = rendering.FilledPolygon([(l,b),(l,t),(r,t),(r,b)])
             ob1.set_color(0.,0.,0.)
             self.viewer.add_geom(ob1)
@@ -177,7 +177,7 @@ class MyEnv(gym.Env):
             ob3_trans.set_translation((margin+150*self.MAP_RESOLUTION)*scale,(margin+750*self.MAP_RESOLUTION)*scale)
             ob3.add_attr(ob3_trans)
             ob3.set_color(0.0,0.0,0.0)
-            self.viewer.add_geom(ob3)
+            #self.viewer.add_geom(ob3)
 
             ob4 = rendering.make_circle((50*self.MAP_RESOLUTION)*scale)
             ob4_trans = rendering.Transform()
@@ -281,19 +281,6 @@ class MyEnv(gym.Env):
 
     def is_done(self):
         return (not self.is_movable(self.pose)) or self.is_collision(self.pose) or self.is_goal()
-
-    def raycasting_from_dataset(self,pose):
-        with open('raycasting.csv','r') as f:
-            reader = csv.reader(f)
-            x = pose[0] - pose[0]%0.01
-            y = pose[1] - pose[1]%0.01
-            theta = pose[2] - pose[2]%0.01
-            lidar = np.zeros(self.NUM_LIDAR)
-            for row in reader:
-                if float(row[0]) == x and float(row[1]) == y and float(row[2]) == theta:
-                    for i in range(self.NUM_LIDAR):
-                        lidar[i] = row[i+3]
-                        return lidar
 
     def raycasting(self,pose, angle):
         x0 = int(pose[0]/self.MAP_RESOLUTION)

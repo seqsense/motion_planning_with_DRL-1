@@ -3,7 +3,7 @@ import numpy as np
 import gym
 import myenv
 from train_ex import PPONet
-GAME = 'myenv-v7'
+GAME = 'myenv-v3'
 MAX_EP_STEP = 1000
 MAX_EP = 10
 GLOBAL_RUNNING_R = []

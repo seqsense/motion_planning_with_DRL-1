@@ -58,7 +58,7 @@ class MyEnv(gym.Env):
         self.WORLD_SIZE = self.MAP_SIZE * self.MAP_RESOLUTION
         self.DT = 0.1 #seconds between state updates
 
-        self.robot_radius = 0.2
+        self.robot_radius = 0.3
 
         #dynamic obstract
         self.ob = SocialForceModel(self.robot_radius)
@@ -79,7 +79,8 @@ class MyEnv(gym.Env):
         self.max_range = 10.0
         self.min_distance = 0.0
         self.max_distance = np.sqrt(2) * self.WORLD_SIZE
-        self.NUM_LIDAR = 10
+        self.NUM_LIDAR = 36
+        self.NUM_KERNEL = 20
         self.NUM_TARGET = 3 
         self.MAX_ANGLE = 0.5*np.pi
         self.ANGLE_INCREMENT = self.MAX_ANGLE * 2.0 / self.NUM_LIDAR
@@ -243,7 +244,7 @@ class MyEnv(gym.Env):
         if abs(self.pre_dis-self.dis) < 1e-6:
             reward -=0.05
         self.pre_dis = self.dis
-        reward += 1./(200.*np.pi)*angle_diff(np.arctan2((self.pose[1]-self.target[1]),(self.pose[0]-self.target[0])),self.pose[2])
+        #reward += 1./(200.*np.pi)*angle_diff(np.arctan2((self.pose[1]-self.target[1]),(self.pose[0]-self.target[0])),self.pose[2])
         return reward
 
     def is_movable(self, pose):
@@ -269,8 +270,11 @@ class MyEnv(gym.Env):
         observation = np.zeros(self.observation_space.shape[0])
         #LIDAR
         for i in range(self.NUM_LIDAR):
-            angle = i * self.ANGLE_INCREMENT - self.MAX_ANGLE
-            observation[i] = self.raycasting(pose,angle)
+            lidar = []
+            for j in range(i*self.NUM_KERNEL,(i+1)*self.NUM_KERNEL-1):
+                angle = i * self.ANGLE_INCREMENT - self.MAX_ANGLE
+                lidar.append(self.raycasting(pose,angle))
+            observation[i] = np.amin(lidar)
         #pose
         observation[self.NUM_LIDAR] = np.sqrt((target[0]-pose[0])**2 +(target[1]-pose[1])**2)
         theta = np.arctan2((target[1]-pose[1]),(self.target[0]-pose[0]))
