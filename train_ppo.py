@@ -342,7 +342,7 @@ if __name__ == "__main__":
     saver = tf.train.Saver()
 
     nn_model = NN_MODEL
-    if nn_model is not None:
+    if os.path.exists(nn_model):
         saver.restore(SESS,nn_model)
         print("Model restored!!")
 
