@@ -124,9 +124,9 @@ class PPONet(object):
         clipped_loss_CPI = self.r_clip * tf.stop_gradient(self.advantage)  # stop_gradientでadvantageは定数として扱います
         self.loss_CLIP = -tf.reduce_mean(tf.minimum(loss_CPI, clipped_loss_CPI))
 
-        self.loss_value = LOSS_V * tf.reduce_mean(tf.square(self.advantage))  # minimize value error
-        self.entropy = LOSS_ENTROPY * tf.reduce_mean(beta_dist.entropy())  # maximize entropy (regularization)
-        self.loss_total = self.loss_CLIP + self.loss_value - self.entropy
+        self.loss_value = tf.reduce_mean(tf.square(self.advantage))  # minimize value error
+        self.entropy = tf.reduce_mean(beta_dist.entropy())  # maximize entropy (regularization)
+        self.loss_total = self.loss_CLIP + LOSS_V * self.loss_value - LOSS_ENTROPY * self.entropy
 
         minimize = self.opt.minimize(self.loss_total, global_step=self.global_step)   # 求めた勾配で重み変数を更新する定義
         return minimize
@@ -162,7 +162,7 @@ class PPONet(object):
 
         summary_str = self.sess.run(summary_ops, feed_dict = {
             summary_vars[0]: r.mean(),
-            summary_vars[1]: self.sess.run(self.entropy, feed_dict={self.s_t:s}) / LOSS_ENTROPY,
+            summary_vars[1]: self.sess.run(self.entropy, feed_dict={self.s_t: s}),
             summary_vars[2]: self.sess.run(self.learning_rate),
             summary_vars[3]: self.sess.run(self.loss_CLIP, feed_dict),
             summary_vars[4]: self.sess.run(self.loss_value, feed_dict={self.s_t: s, self.r_t: r}),
